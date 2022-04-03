@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 clap = "3.1.6"
 colored = "2.0.0"
+clearscreen = "1.0.9"

@@ -4,8 +4,8 @@ use std::io;
 use colored::*;
 
 fn main() {
-    // let mut board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    let mut board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/8/3Q4 w KQkq - 0 1");
+    let mut board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    // let mut board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/8/3Q4 w KQkq - 0 1");
 
     loop {
         println!("{:?}", board);
@@ -14,6 +14,9 @@ fn main() {
         let mut stdin = io::stdin();
         stdin.read_line(&mut buffer).unwrap();
 
+        clearscreen::clear().unwrap();
+
+        buffer.retain(|c| !c.is_whitespace());
         if buffer.len() < 4 {
             println!("{}", "Invalid syntax".red());
             continue;
@@ -61,7 +64,7 @@ fn main() {
         let to_rank = *&to_pos[1].to_digit(10).unwrap() as usize;
         let to = [to_rank - 1, to_file];
 
-        if !(0..=8).contains(&to_file) || !(0..=8).contains(&from_file) || !(0..=8).contains(&to_rank) || !(0..=8).contains(&from_rank){
+        if !(0..=8).contains(&to_file) || !(0..=8).contains(&from_file) || !(0..=8).contains(&to_rank) || !(0..=8).contains(&from_rank) {
             println!("Move out of bounds");
             continue;
         }
@@ -70,6 +73,7 @@ fn main() {
     }
 }
 
+#[derive(Clone, Copy)]
 struct Board {
     squares: [[Piece; 8]; 8],
     active_color: bool, // white is false, black is true
@@ -150,8 +154,7 @@ impl Board {
         }
         if (piece.is_white() && !self.active_color) ||
             (piece.is_black() && self.active_color) {
-            if self.is_valid(on, to) {
-                println!("{:?}", self);
+            if self.check_valid(on, to) {
                 self.set_piece([x, y], if (x + y) % 2 != 0 { BLACK } else { WHITE });
                 let (x, y) = (to[0], to[1]);
                 self.set_piece([x, y], piece.0);
@@ -163,36 +166,40 @@ impl Board {
             println!("Piece is not yours");
         }
     }
-    pub fn is_valid(&mut self, from: Move, to: Move) -> bool {
+    pub fn check_valid(&mut self, from: Position, to: Position) -> bool {
         let piece_from = self.squares[from[0]][from[1]];
         let piece_to = self.squares[to[0]][to[1]];
 
         if !piece_to.is_piece() || piece_to.get_color() != self.active_color {
-            if let Some(piece_type) = piece_from.get_type() {
-                match piece_type {
-                    PieceType::Bishop | PieceType::Rook | PieceType::Queen => {
-                        let moves = self.gen_sliding(from, to, piece_type);
-                        return moves.contains(&to);
-                    }
-                    PieceType::Pawn => {}
-                    PieceType::King => {}
-                    PieceType::Knight => {}
-                }
-            } else {
-                return true;
-            }
-            false
-        } else {
-            false
+            let moves = self.gen_legal_moves(from);
+            return moves.contains(&to);
         }
+        false
     }
-    pub fn set_piece(&mut self, on: Move, value: u32) {
+    pub fn gen_moves(&mut self, from: Position) -> Vec<Position> {
+        let piece_from = self.squares[from[0]][from[1]];
+        if let Some(piece_type) = piece_from.get_type() {
+            return match piece_type {
+                PieceType::Bishop | PieceType::Rook | PieceType::Queen => self.gen_sliding(from, piece_type),
+                PieceType::Pawn => self.gen_pawn(from),
+                PieceType::King => self.gen_king(from),
+                PieceType::Knight => vec![]
+            };
+        }
+        vec![]
+    }
+    pub fn get_piece(&self, on: Position) -> Piece {
+        self.squares[on[0]][on[1]]
+    }
+    pub fn set_piece(&mut self, on: Position, value: u32) {
         self.squares[on[0]][on[1]] = Piece(value);
     }
+
     pub fn get_fen(&self) -> String {
         todo!()
     }
-    pub fn gen_sliding(&mut self, from: Move, to: Move, piece_type: PieceType) -> Vec<Move> {
+    pub fn gen_sliding(&mut self, from: Position, piece_type: PieceType) -> Vec<Position> {
+        let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         let start = if piece_type == PieceType::Bishop { 4 } else { 0 };
         let end = if piece_type == PieceType::Rook { 4 } else { 8 };
@@ -203,22 +210,75 @@ impl Board {
                 let target_move = [target_index / 8, target_index % 8];
                 let target_piece = self.squares[target_move[0]][target_move[1]];
 
-                if target_piece.is_piece() && target_piece.get_color() == self.active_color {
+                if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
                     // your own color is in the way
+                    // println!("Piece is yours!");
                     break;
                 }
                 moves.push(target_move);
                 // self.squares[target_move[0]][target_move[1]] = Piece(100);
 
-                if target_piece.is_piece() && target_piece.get_color() != self.active_color {
+                if target_piece.is_piece() && target_piece.get_color() != piece_from.get_color() {
                     // Enemy piece and capturable
+                    // println!("Piece is not yours, but you should still break the loop!");
                     break;
                 }
             }
         }
         moves
     }
-    pub fn len_to_edge(&self, pos: Move, direction: Direction) -> usize {
+    pub fn gen_king(&mut self, from: Position) -> Vec<Position> {
+        let mut moves = vec![];
+        for direction in 0..8 {
+            let index = from[0] * 8 + from[1];
+            let target_index = (index as i32 + DIRECTION_OFFSETS[direction] * 2 as i32).clamp(0, 63) as usize;
+            let target_move = [target_index / 8, target_index % 8];
+            let target_piece = self.squares[target_move[0]][target_move[1]];
+
+            if target_piece.is_piece() && target_piece.get_color() == self.active_color {
+                // your own color is in the way
+                break;
+            }
+            moves.push(target_move);
+            // self.squares[target_move[0]][target_move[1]] = Piece(100);
+
+            if target_piece.is_piece() && target_piece.get_color() != self.active_color {
+                // Enemy piece and capturable
+                break;
+            }
+        }
+        moves
+    }
+    pub fn gen_pawn(&mut self, from: Position) -> Vec<Position> {
+        let piece = self.squares[from[0]][from[1]];
+        let mut moves = vec![];
+        let shift = if piece.get_color() { -1 } else { 1 };
+        // hasn't moved yet
+        if piece.is_black() && from[0] == 6 || piece.is_white() && from[0] == 1 {
+            moves.push([(from[0] as i32 + (shift * 2)) as usize, from[1]]);
+        }
+        // piece blocking
+        if !self.squares[(from[0] as i32 + shift) as usize][from[1]].is_piece() {
+            moves.push([(from[0] as i32 + shift) as usize, from[1]]);
+        }
+        if (1..8).contains(&from[1]) {
+            let to_left_pos = [(from[0] as i32 + shift) as usize, from[1] - 1];
+            let to_left = self.squares[to_left_pos[0]][to_left_pos[1]];
+            if to_left.is_piece() && to_left.get_color() != piece.get_color() {
+                moves.push(to_left_pos);
+            }
+        }
+
+        if (0..7).contains(&from[1]) {
+            let to_right_pos = [(from[0] as i32 + shift) as usize, from[1] + 1];
+            let to_right = self.squares[to_right_pos[0]][to_right_pos[1]];
+            if to_right.is_piece() && to_right.get_color() != piece.get_color() {
+                moves.push(to_right_pos);
+            }
+        }
+        moves
+    }
+    pub fn len_to_edge(&self, pos: Position, direction: Direction) -> usize {
         let (rank, file) = (pos[0], pos[1]);
         let north = 7 - rank;
         let south = rank;
@@ -236,6 +296,61 @@ impl Board {
             Direction::NorthWest => min(north, west)
         }
     }
+    pub fn gen_legal_moves(&mut self, from: Position) -> Vec<Position> {
+        let moves = self.gen_moves(from);
+        let mut legal_moves = vec![];
+        println!("moves {:?}", &moves);
+
+        let mut last_piece = 0;
+        for to in moves.into_iter() {
+            last_piece = self.squares[to[0]][to[1]].0;
+            self.make_move(from, to);
+            let next_moves = self.gen_opponent_moves();
+            let mut is_king = false;
+            // println!("next possible moves: {:?}", next_moves);
+            next_moves.iter().for_each(|x| {
+                let next_piece = self.squares[x[0]][x[1]];
+                if next_piece.is_piece() && next_piece.get_color() == self.active_color {
+                    // println!("{:?}", next_piece);
+                    if let Some(t) = next_piece.get_type() {
+                        if t == PieceType::King {
+                            // println!("This move would hit your king!");
+                            is_king = true;
+                        }
+                        // println!("Piece is not my king!");
+                    }
+                }
+            });
+            if !is_king {
+                legal_moves.push(to);
+            }
+            self.undo_move(from, to, last_piece);
+        }
+        println!("legal moves {:?}", &legal_moves);
+        legal_moves
+    }
+    pub fn make_move(&mut self, from: Position, to: Position) {
+        self.set_piece(to, self.get_piece(from).0);
+        self.set_piece(from, if (from[0] + from[1]) % 2 != 0 { BLACK } else { WHITE });
+    }
+    pub fn undo_move(&mut self, from: Position, to: Position, last_piece: u32) {
+        self.set_piece(from, self.get_piece(to).0);
+        self.set_piece(to, last_piece);
+    }
+    pub fn gen_opponent_moves(&mut self) -> Vec<Position> {
+        let mut opponent_moves = vec![];
+        for rank in 0..8 {
+            for file in 0..8 {
+                let piece = self.squares[rank][file];
+                if piece.is_piece() && piece.get_color() != self.active_color {
+                    // println!("found enemy piece! {:?}", piece);
+                    let moves = self.gen_moves([rank, file]);
+                    opponent_moves.extend(moves);
+                }
+            }
+        }
+        opponent_moves
+    }
 }
 
 pub const DIRECTION_OFFSETS: [i32; 8] = [8, 9, 1, -7, -8, -9, -1, 7];
@@ -245,11 +360,11 @@ impl Debug for Board {
         for x in 0..8 {
             writeln!(f, "{} {:?}", 8 - x, self.squares[7 - x]);
         }
-        writeln!(f, "    a  b   c   d   e   f   g   h");
+        writeln!(f, "   a   b   c   d   e   f   g   h");
         if self.active_color {
-            writeln!(f, "black turn");
+            writeln!(f, "black's turn");
         } else {
-            writeln!(f, "white turn");
+            writeln!(f, "white's turn");
         }
         Ok(())
     }
@@ -263,8 +378,7 @@ impl Piece {
         self.is_black()
     }
     pub fn get_type(&self) -> Option<PieceType> {
-        let shift = if self.get_color() { BLACK } else { WHITE };
-        let result = match self.0 - shift {
+        let result = match self.0 % 8 {
             PAWN => PieceType::Pawn,
             KNIGHT => PieceType::Knight,
             KING => PieceType::King,
@@ -325,7 +439,7 @@ pub enum PieceType {
     Knight,
 }
 
-type Move = [usize; 2];
+type Position = [usize; 2];
 
 pub enum Direction {
     North,
