@@ -8,7 +8,9 @@ use crate::resources::board_options::BoardOptions;
 use crate::resources::piece::{Piece, Position};
 use crate::resources::piece_type::{BLACK, WHITE};
 use crate::systems;
-use crate::systems::moves_display::{hide_moves, show_moves};
+use crate::systems::moves_display::{
+    hide_moves, hide_piece_to_cursor, piece_to_cursor, show_moves, spawn_piece_to_cursor, MoveState,
+};
 
 pub struct BoardPlugin;
 
@@ -18,6 +20,14 @@ impl Plugin for BoardPlugin {
             .insert_resource(BoardMap::default())
             .add_event::<PieceClickedEvent>()
             .add_event::<PieceReleasedEvent>()
+            .add_state(MoveState::Released)
+            .add_system_set(
+                SystemSet::on_enter(MoveState::Clicked).with_system(spawn_piece_to_cursor),
+            )
+            .add_system_set(SystemSet::on_update(MoveState::Clicked).with_system(piece_to_cursor))
+            .add_system_set(
+                SystemSet::on_exit(MoveState::Clicked).with_system(hide_piece_to_cursor),
+            )
             .add_startup_system(spawn_board)
             .add_system(show_moves)
             .add_system(hide_moves)

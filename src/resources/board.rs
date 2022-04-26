@@ -2,7 +2,7 @@ use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
-use crate::resources::piece::{Direction, Piece, Position, DIRECTION_OFFSETS};
+use crate::resources::piece::{Direction, DIRECTION_OFFSETS, Piece, Position};
 use crate::resources::piece_type::*;
 
 #[derive(Clone, Copy)]
@@ -119,7 +119,7 @@ impl Board {
     }
 
     pub fn get_fen(&self) -> String {
-      //TODO
+        todo!()
     }
     pub fn gen_sliding(&self, from: Position, piece_type: PieceType) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
@@ -130,10 +130,10 @@ impl Board {
             0
         };
         let end = if piece_type == PieceType::Rook { 4 } else { 8 };
-        for direction in start..end {
+        for (direction,offset) in  DIRECTION_OFFSETS.iter().enumerate().take(end).skip(start) {
             for n in 0..self.len_to_edge(from, Direction::from(direction)) {
                 let index = from[0] * 8 + from[1];
-                let target_index = (index as i32 + DIRECTION_OFFSETS[direction] * (n + 1) as i32)
+                let target_index = (index as i32 + offset * (n + 1) as i32)
                     .clamp(0, 63) as usize;
                 let target_move = [target_index / 8, target_index % 8];
                 let target_piece = self.squares[target_move[0]][target_move[1]];
@@ -160,8 +160,11 @@ impl Board {
         let mut moves = vec![];
         for direction in 0..8 {
             let index = from[0] * 8 + from[1];
-            let target_index = (index as i32 + DIRECTION_OFFSETS[direction]).clamp(0, 63) as usize;
-            let target_move = [target_index / 8, target_index % 8];
+            let target_index = (index as i32 + DIRECTION_OFFSETS[direction]);
+            if !(0..=63).contains(&target_index) {
+                continue;
+            }
+            let target_move = [target_index as usize / 8, target_index as usize % 8];
             let target_piece = self.squares[target_move[0]][target_move[1]];
 
             if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
@@ -294,13 +297,13 @@ impl Board {
 impl Debug for Board {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for x in 0..8 {
-            writeln!(f, "{} {:?}", 8 - x, self.squares[7 - x]);
+            writeln!(f, "{} {:?}", 8 - x, self.squares[7 - x]).unwrap();
         }
-        writeln!(f, "   a   b   c   d   e   f   g   h");
+        writeln!(f, "   a   b   c   d   e   f   g   h").unwrap();
         if self.active_color {
-            writeln!(f, "black's turn");
+            writeln!(f, "black's turn").unwrap();
         } else {
-            writeln!(f, "white's turn");
+            writeln!(f, "white's turn").unwrap();
         }
         Ok(())
     }

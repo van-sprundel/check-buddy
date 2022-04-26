@@ -55,24 +55,6 @@ fn main() {
         let from_rank = *&from_pos[1].to_digit(10).unwrap() as usize;
         let from = [from_rank - 1, from_file];
 
-        let to_pos = &sections[2..4];
-        let to_file = match to_pos[0] {
-            'a' => 0,
-            'b' => 1,
-            'c' => 2,
-            'd' => 3,
-            'e' => 4,
-            'f' => 5,
-            'g' => 6,
-            'h' => 7,
-            _ => {
-                println!("{}", "Invalid syntax".red());
-                continue;
-            }
-        };
-        let to_rank = *&to_pos[1].to_digit(10).unwrap() as usize;
-        let to = [to_rank - 1, to_file];
-
         if !(0..=8).contains(&to_file)
             || !(0..=8).contains(&from_file)
             || !(0..=8).contains(&to_rank)

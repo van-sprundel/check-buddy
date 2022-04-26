@@ -50,7 +50,6 @@ impl Debug for Piece {
             ""
         };
 
-        write!(f, "{:^2}", piece);
-        Ok(())
+        write!(f, "{:^2}", piece)
     }
 }
