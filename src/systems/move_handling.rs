@@ -1,13 +1,13 @@
-use crate::board_plugin::{BoardMap, PieceComponent};
+use crate::board_plugin::{Board};
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
 use crate::resources::board_options::BoardOptions;
 use bevy::prelude::*;
-use clap::command;
+
 
 pub fn move_system(
     board_options: Res<BoardOptions>,
     mut commands: Commands,
-    mut board_map: ResMut<BoardMap>,
+    mut board_map: ResMut<Board>,
     mut piece_clicked_evr: EventReader<PieceClickedEvent>,
     mut piece_released_evr: EventReader<PieceReleasedEvent>,
 ) {
@@ -20,7 +20,7 @@ pub fn move_system(
         if let Some(old_pos) = board_map.selected_square {
             info!("{:?} {:?}", old_pos, new_pos);
             if let Some(old_piece) = board_map.pieces.clone().get(&old_pos) {
-                if board_map.board.move_turn(old_pos, new_pos) {
+                if board_map.board_map.move_turn(old_pos, new_pos) {
                     let transform = Transform::from_xyz(
                         (-board_options.tile_size * (7 - new_pos[1]) as f32)
                             - (board_options.tile_size / 2.),
@@ -45,6 +45,6 @@ pub fn move_system(
                 }
             }
         }
-        info!("\n{:?}", board_map.board);
+        info!("\n{:?}", board_map.board_map);
     }
 }

@@ -1,8 +1,8 @@
 use crate::resources::piece_type::*;
 use bevy::asset::AssetServer;
 use bevy::prelude::*;
-use std::fmt::{Debug, Formatter};
-use std::ops::{Deref, DerefMut};
+
+
 
 #[derive(Copy, Clone)]
 pub struct Piece(pub(crate) u32);

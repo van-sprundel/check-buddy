@@ -1,8 +1,7 @@
-use crate::board_plugin::BoardMap;
+use crate::board_plugin::Board;
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
 use crate::resources::board_options::BoardOptions;
 use bevy::prelude::*;
-use clap::command;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum MoveState {
@@ -11,7 +10,7 @@ pub enum MoveState {
 }
 
 pub fn show_moves(
-    board_map: Res<BoardMap>,
+    board_map: Res<Board>,
     board_options: Res<BoardOptions>,
     windows: Res<Windows>,
     mut commands: Commands,
@@ -20,7 +19,9 @@ pub fn show_moves(
 ) {
     let window = windows.primary();
     for ev in piece_clicked_evr.iter() {
-        state.set(MoveState::Clicked).unwrap();
+        if *state.current() == MoveState::Released {
+            state.set(MoveState::Clicked).unwrap();
+        }
         info!("Showing moves");
         commands
             .spawn()
@@ -32,7 +33,7 @@ pub fn show_moves(
             ))
             .insert(GlobalTransform::default())
             .with_children(|parent| {
-                let moves = board_map.board.gen_legal_moves(ev.0);
+                let moves = board_map.board_map.gen_legal_moves(ev.0);
                 for position in moves.iter() {
                     parent.spawn_bundle(SpriteBundle {
                         sprite: Sprite {
@@ -108,13 +109,16 @@ pub fn hide_moves(
 }
 
 pub fn spawn_piece_to_cursor(
-     asset_server: Res<AssetServer>,
-     board_options: Res<BoardOptions>,
-     board_map: Res<BoardMap>,
+    mut windows: ResMut<Windows>,
+    asset_server: Res<AssetServer>,
+    board_options: Res<BoardOptions>,
+    board_map: Res<Board>,
     mut commands: Commands,
 ) {
+    let window = windows.primary_mut();
+    window.set_cursor_visibility(false);
     if let Some(selected_position) = board_map.selected_square {
-        let piece = board_map.board.get_piece(selected_position);
+        let piece = board_map.board_map.get_piece(selected_position);
 
         commands
             .spawn_bundle(SpriteBundle {
@@ -138,24 +142,31 @@ pub fn spawn_piece_to_cursor(
 pub struct CursorPiece;
 
 pub fn piece_to_cursor(
-     windows: Res<Windows>,
+    windows: Res<Windows>,
     mut query: Query<&mut Transform, With<CursorPiece>>,
 ) {
     let window = windows.primary();
     for mut cursor_piece in query.iter_mut() {
         if let Some(position) = window.cursor_position() {
             // if let Some(position2) = board_map.get_position(&board_options, position) {
-                cursor_piece.translation = Vec3::new(
-                    -(window.width() / 2.) + position[0] as f32,
-                    -(window.height() / 2.) + position[1] as f32,
-                    5.,
-                );
+            cursor_piece.translation = Vec3::new(
+                -(window.width() / 2.) + position[0] as f32,
+                -(window.height() / 2.) + position[1] as f32,
+                5.,
+            );
             // }
         }
     }
 }
 
-pub fn hide_piece_to_cursor(query: Query<Entity, With<CursorPiece>>, mut commands: Commands) {
-    let cursor_piece = query.single();
-    commands.entity(cursor_piece).despawn();
+pub fn hide_piece_to_cursor(
+    mut windows: ResMut<Windows>,
+    query: Query<Entity, With<CursorPiece>>,
+    mut commands: Commands,
+) {
+    let window = windows.primary_mut();
+    for cursor_piece in query.iter() {
+        commands.entity(cursor_piece).despawn();
+        window.set_cursor_visibility(true);
+    }
 }

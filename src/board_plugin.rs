@@ -3,10 +3,10 @@ use bevy::prelude::*;
 use std::collections::HashMap;
 
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
-use crate::resources::board::Board;
+use crate::resources::board::BoardMap;
 use crate::resources::board_options::BoardOptions;
-use crate::resources::piece::{Piece, Position};
-use crate::resources::piece_type::{BLACK, WHITE};
+use crate::resources::piece::{Position};
+
 use crate::systems;
 use crate::systems::moves_display::{
     hide_moves, hide_piece_to_cursor, piece_to_cursor, show_moves, spawn_piece_to_cursor, MoveState,
@@ -17,7 +17,7 @@ pub struct BoardPlugin;
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(BoardOptions::default())
-            .insert_resource(BoardMap::default())
+            .insert_resource(Board::default())
             .add_event::<PieceClickedEvent>()
             .add_event::<PieceReleasedEvent>()
             .add_state(MoveState::Released)
@@ -36,23 +36,23 @@ impl Plugin for BoardPlugin {
     }
 }
 
-pub struct BoardMap {
-    pub(crate) board: Board,
+pub struct Board {
+    pub(crate) board_map: BoardMap,
     pub pieces: HashMap<Position, Entity>,
     pub(crate) selected_square: Option<Position>,
 }
 
-impl Default for BoardMap {
+impl Default for Board {
     fn default() -> Self {
         Self {
-            board: Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"),
+            board_map: BoardMap::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"),
             pieces: HashMap::with_capacity(64),
             selected_square: None,
         }
     }
 }
 
-impl BoardMap {
+impl Board {
     pub fn get_position(
         &self,
         board_options: &Res<BoardOptions>,
@@ -68,7 +68,7 @@ impl BoardMap {
 
 pub fn spawn_board(
     board_options: Res<BoardOptions>,
-    mut board_map: ResMut<BoardMap>,
+    mut board_map: ResMut<Board>,
     windows: Res<Windows>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -107,7 +107,7 @@ pub fn spawn_board(
                 });
                 // piece
                 let position = [7 - y, 7 - x];
-                let piece = board_map.board.get_piece(position);
+                let piece = board_map.board_map.get_piece(position);
                 if let Some(texture) = piece.get_icon(&asset_server) {
                     let entity = parent
                         .spawn_bundle(SpriteBundle {

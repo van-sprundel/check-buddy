@@ -1,17 +1,17 @@
 use bevy::app::App;
 use bevy::DefaultPlugins;
-use std::cmp::min;
-use std::fmt::{write, Debug, Formatter};
-use std::io;
+
+
+
 
 use chess::board_plugin::BoardPlugin;
-use chess::resources::board::Board;
+
 #[cfg(feature = "debug")]
 use colored::*;
 
 #[cfg(not(feature = "debug"))]
 use bevy::prelude::*;
-use bevy::render::camera::Camera2d;
+
 use bevy_inspector_egui::WorldInspectorPlugin;
 
 #[cfg(feature = "debug")]

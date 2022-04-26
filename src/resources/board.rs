@@ -6,12 +6,12 @@ use crate::resources::piece::{Direction, DIRECTION_OFFSETS, Piece, Position};
 use crate::resources::piece_type::*;
 
 #[derive(Clone, Copy)]
-pub struct Board {
+pub struct BoardMap {
     squares: [[Piece; 8]; 8],
     active_color: bool, // white is false, black is true
 }
 
-impl Default for Board {
+impl Default for BoardMap {
     fn default() -> Self {
         let squares = [[Piece(0); 8]; 8];
 
@@ -22,7 +22,7 @@ impl Default for Board {
     }
 }
 
-impl Board {
+impl BoardMap {
     /// starting position: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     /// white is uppercase, black is lowercase
     pub fn from_fen(fen: &str) -> Self {
@@ -160,7 +160,7 @@ impl Board {
         let mut moves = vec![];
         for direction in 0..8 {
             let index = from[0] * 8 + from[1];
-            let target_index = (index as i32 + DIRECTION_OFFSETS[direction]);
+            let target_index = index as i32 + DIRECTION_OFFSETS[direction];
             if !(0..=63).contains(&target_index) {
                 continue;
             }
@@ -236,9 +236,8 @@ impl Board {
         let mut legal_moves = vec![];
         println!("moves {:?}", &moves);
 
-        let mut last_piece = 0;
         for to in moves.into_iter() {
-            last_piece = temp_board.squares[to[0]][to[1]].0;
+            let last_piece = temp_board.squares[to[0]][to[1]].0;
             temp_board.make_move(from, to);
             let next_moves = temp_board.gen_opponent_moves();
             // println!("next possible moves: {:?}", next_moves);
@@ -294,7 +293,7 @@ impl Board {
     }
 }
 
-impl Debug for Board {
+impl Debug for BoardMap {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for x in 0..8 {
             writeln!(f, "{} {:?}", 8 - x, self.squares[7 - x]).unwrap();
@@ -309,7 +308,7 @@ impl Debug for Board {
     }
 }
 
-impl Deref for Board {
+impl Deref for BoardMap {
     type Target = [[Piece; 8]; 8];
 
     fn deref(&self) -> &Self::Target {
@@ -317,7 +316,7 @@ impl Deref for Board {
     }
 }
 
-impl DerefMut for Board {
+impl DerefMut for BoardMap {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.squares
     }
