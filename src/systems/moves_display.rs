@@ -165,8 +165,8 @@ pub fn hide_piece_to_cursor(
     mut commands: Commands,
 ) {
     let window = windows.primary_mut();
+    window.set_cursor_visibility(true);
     for cursor_piece in query.iter() {
         commands.entity(cursor_piece).despawn();
-        window.set_cursor_visibility(true);
     }
 }

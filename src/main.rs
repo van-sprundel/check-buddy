@@ -1,22 +1,22 @@
+use std::io;
 use bevy::app::App;
 use bevy::DefaultPlugins;
 
-
-
-
-use chess::board_plugin::BoardPlugin;
+use chess::board_plugin::{Board, BoardPlugin};
 
 #[cfg(feature = "debug")]
 use colored::*;
 
 #[cfg(not(feature = "debug"))]
 use bevy::prelude::*;
+#[cfg(not(feature = "debug"))]
+// use bevy_inspector_egui::WorldInspectorPlugin;
 
-use bevy_inspector_egui::WorldInspectorPlugin;
+use chess::resources::board::BoardMap;
 
 #[cfg(feature = "debug")]
 fn main() {
-    let mut board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    let mut board = BoardMap::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     loop {
         println!("{:?}", board);
@@ -78,7 +78,7 @@ fn main() {
         ..Default::default()
     });
     app.add_plugins(DefaultPlugins);
-    app.add_plugin(WorldInspectorPlugin::new());
+    // app.add_plugin(WorldInspectorPlugin::new());
     app.add_plugin(BoardPlugin);
     app.add_startup_system(setup_camera);
     app.run();

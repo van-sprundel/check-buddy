@@ -6,13 +6,29 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["bevy", "bevy-inspector-egui"]
-debug = ["colored"]
+default = ["bevy"]
+debug = ["colored","clearscreen","clap"]
 
 [dependencies]
-bevy = { version = "0.7", optional = true }
-clap = "3.1"
+clap = {version="3.1",optional=true}
 colored = { version = "2.0", optional = true }
 bevy-inspector-egui = { version = "0.10", optional = true }
-clearscreen = "1.0"
+clearscreen = {version="1.0",optional=true}
 
+[dependencies.bevy]
+version = "0.7"
+optional = true
+default-features = false
+features = ["render","bevy_winit","png"]
+
+# WASM support
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies.bevy]
+version="0.7"
+default-features = false
+features = ["x11"]
+
+[profile.dev.package."*"]
+opt-level=3
+
+[profile.dev]
+opt-level=1
