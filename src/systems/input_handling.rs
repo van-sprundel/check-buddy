@@ -28,6 +28,7 @@ pub fn input_handle_system(
                 if e.button == MouseButton::Left {
                     info!("Clicking on tile {:?}", position);
                     if piece.is_piece() {
+                        info!("Clicked tile is piece");
                         piece_clicked_wr.send(PieceClickedEvent(position));
                     }
                 }

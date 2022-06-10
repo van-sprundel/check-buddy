@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
 use crate::resources::board::BoardMap;
 use crate::resources::board_options::BoardOptions;
-use crate::resources::piece::{Position};
+use crate::resources::piece::Position;
 
 use crate::systems;
 use crate::systems::moves_display::{
@@ -45,7 +45,9 @@ pub struct Board {
 impl Default for Board {
     fn default() -> Self {
         Self {
-            board_map: BoardMap::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"),
+            board_map: BoardMap::from_fen(
+                "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            ),
             pieces: HashMap::with_capacity(64),
             selected_square: None,
         }

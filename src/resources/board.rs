@@ -1,8 +1,9 @@
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
+use bevy::prelude::debug;
 
-use crate::resources::piece::{Direction, DIRECTION_OFFSETS, Piece, Position};
+use crate::resources::piece::{Direction, Piece, Position, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS};
 use crate::resources::piece_type::*;
 
 #[derive(Clone, Copy)]
@@ -65,6 +66,18 @@ impl BoardMap {
 
         board
     }
+    pub fn get_fen(&self) -> String {
+        todo!()
+    }
+    pub fn get_piece(&self, on: Position) -> Piece {
+        self.squares[on[0]][on[1]]
+    }
+    pub fn get_active_color(&self) -> bool {
+        self.active_color
+    }
+    fn set_piece(&mut self, _on: Position, value: u32) { self.squares[_on[0]][_on[1]] = Piece(value); }
+
+    /// make a move with check
     pub fn move_turn(&mut self, on: [usize; 2], to: [usize; 2]) -> bool {
         let (x, y) = (on[0], on[1]);
         let piece = self.squares[x][y];
@@ -73,7 +86,7 @@ impl BoardMap {
             return false;
         }
         if (piece.is_white() && !self.active_color) || (piece.is_black() && self.active_color) {
-            if self.check_valid(on, to) {
+            if self.is_valid_move(on, to) {
                 self.set_piece([x, y], if (x + y) % 2 != 0 { BLACK } else { WHITE });
                 let (x, y) = (to[0], to[1]);
                 self.set_piece([x, y], piece.0);
@@ -87,8 +100,8 @@ impl BoardMap {
         }
         false
     }
-    pub fn check_valid(&self, from: Position, to: Position) -> bool {
-        let _piece_from = self.squares[from[0]][from[1]];
+    /// check if move is valid
+    pub fn is_valid_move(&self, from: Position, to: Position) -> bool {
         let piece_to = self.squares[to[0]][to[1]];
 
         if !piece_to.is_piece() || piece_to.get_color() != self.active_color {
@@ -97,6 +110,7 @@ impl BoardMap {
         }
         false
     }
+    /// generate all possible moves for piece
     pub fn gen_moves(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         if let Some(piece_type) = piece_from.get_type() {
@@ -106,20 +120,10 @@ impl BoardMap {
                 }
                 PieceType::Pawn => self.gen_pawn(from),
                 PieceType::King => self.gen_king(from),
-                PieceType::Knight => vec![],
+                PieceType::Knight => self.gen_knight(from),
             };
         }
         vec![]
-    }
-    pub fn get_piece(&self, on: Position) -> Piece {
-        self.squares[on[0]][on[1]]
-    }
-    pub fn set_piece(&mut self, _on: Position, value: u32) {
-        self.squares[_on[0]][_on[1]] = Piece(value);
-    }
-
-    pub fn get_fen(&self) -> String {
-        todo!()
     }
     pub fn gen_sliding(&self, from: Position, piece_type: PieceType) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
@@ -130,11 +134,10 @@ impl BoardMap {
             0
         };
         let end = if piece_type == PieceType::Rook { 4 } else { 8 };
-        for (direction,offset) in  DIRECTION_OFFSETS.iter().enumerate().take(end).skip(start) {
+        for (direction, offset) in DIRECTION_OFFSETS.iter().enumerate().take(end).skip(start) {
             for n in 0..self.len_to_edge(from, Direction::from(direction)) {
                 let index = from[0] * 8 + from[1];
-                let target_index = (index as i32 + offset * (n + 1) as i32)
-                    .clamp(0, 63) as usize;
+                let target_index = (index as i32 + offset * (n + 1) as i32).clamp(0, 63) as usize;
                 let target_move = [target_index / 8, target_index % 8];
                 let target_piece = self.squares[target_move[0]][target_move[1]];
 
@@ -158,9 +161,9 @@ impl BoardMap {
     pub fn gen_king(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
-        for direction in 0..8 {
+        for direction in DIRECTION_OFFSETS {
             let index = from[0] * 8 + from[1];
-            let target_index = index as i32 + DIRECTION_OFFSETS[direction];
+            let target_index = index as i32 + direction;
             if !(0..=63).contains(&target_index) {
                 continue;
             }
@@ -187,14 +190,18 @@ impl BoardMap {
         let piece = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         let shift = if piece.get_color() { -1 } else { 1 };
-        // hasn't moved yet
-        if piece.is_black() && from[0] == 6 || piece.is_white() && from[0] == 1 {
-            moves.push([(from[0] as i32 + (shift * 2)) as usize, from[1]]);
-        }
+
         // piece blocking
-        if !self.squares[(from[0] as i32 + shift) as usize][from[1]].is_piece() {
+        let is_blocking = self.squares[(from[0] as i32 + shift) as usize][from[1]].is_piece();
+        if !is_blocking {
             moves.push([(from[0] as i32 + shift) as usize, from[1]]);
         }
+
+        // hasn't moved yet
+        if (piece.is_black() && from[0] == 6 || piece.is_white() && from[0] == 1) && !is_blocking {
+            moves.push([(from[0] as i32 + (shift * 2)) as usize, from[1]]);
+        }
+
         if (1..8).contains(&from[1]) {
             let to_left_pos = [(from[0] as i32 + shift) as usize, from[1] - 1];
             let to_left = self.squares[to_left_pos[0]][to_left_pos[1]];
@@ -210,6 +217,25 @@ impl BoardMap {
                 moves.push(to_right_pos);
             }
         }
+        moves
+    }
+    pub fn gen_knight(&self, from: Position) -> Vec<Position> {
+        let piece_from = self.squares[from[0]][from[1]];
+        let mut moves = vec![];
+        for direction in KNIGHT_DIRECTION_OFFSETS {
+            let new_pos = [direction[0] + from[0] as i32, direction[1] + from[1] as i32];
+            if (0..8).contains(&new_pos[0]) &&
+                (0..8).contains(&new_pos[1]) {
+                let to_move = [new_pos[0] as usize, new_pos[1] as usize];
+                let target_piece = self.squares[to_move[0]][to_move[1]];
+                if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
+                    continue;
+                }
+
+                moves.push(to_move);
+            }
+        }
+
         moves
     }
     pub fn len_to_edge(&self, pos: Position, direction: Direction) -> usize {
@@ -230,11 +256,12 @@ impl BoardMap {
             Direction::NorthWest => min(north, west),
         }
     }
+    /// generate only legal moves for piece
     pub fn gen_legal_moves(&self, from: Position) -> Vec<Position> {
         let mut temp_board = *self;
         let moves = temp_board.gen_moves(from);
         let mut legal_moves = vec![];
-        println!("moves {:?}", &moves);
+        debug!("moves {:?}", &moves);
 
         for to in moves.into_iter() {
             let last_piece = temp_board.squares[to[0]][to[1]].0;
@@ -256,10 +283,11 @@ impl BoardMap {
 
             temp_board.undo_move(from, to, last_piece);
         }
-        println!("legal moves {:?}", &legal_moves);
+        debug!("legal moves {:?}", &legal_moves);
         legal_moves
     }
-    pub fn make_move(&mut self, from: Position, to: Position) {
+    /// make a move (without check)
+    fn make_move(&mut self, from: Position, to: Position) {
         self.set_piece(to, self.get_piece(from).0);
         self.set_piece(
             from,
@@ -270,11 +298,11 @@ impl BoardMap {
             },
         );
     }
-    pub fn undo_move(&mut self, from: Position, to: Position, last_piece: u32) {
+    fn undo_move(&mut self, from: Position, to: Position, last_piece: u32) {
         self.set_piece(from, self.get_piece(to).0);
         self.set_piece(to, last_piece);
     }
-    pub fn gen_opponent_moves(&self) -> Vec<Position> {
+    fn gen_opponent_moves(&self) -> Vec<Position> {
         let mut opponent_moves = vec![];
         for rank in 0..8 {
             for file in 0..8 {
@@ -287,9 +315,6 @@ impl BoardMap {
             }
         }
         opponent_moves
-    }
-    pub fn get_active_color(&self) -> bool {
-        self.active_color
     }
 }
 

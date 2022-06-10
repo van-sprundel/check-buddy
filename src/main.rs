@@ -1,17 +1,16 @@
-use std::io;
 use bevy::app::App;
 use bevy::DefaultPlugins;
+use chess::board_plugin::BoardPlugin;
 
-use chess::board_plugin::{Board, BoardPlugin};
 
 #[cfg(feature = "debug")]
 use colored::*;
+#[cfg(feature = "debug")]
+use std::io;
 
 #[cfg(not(feature = "debug"))]
 use bevy::prelude::*;
-#[cfg(not(feature = "debug"))]
-// use bevy_inspector_egui::WorldInspectorPlugin;
-
+#[cfg(feature = "debug")]
 use chess::resources::board::BoardMap;
 
 #[cfg(feature = "debug")]

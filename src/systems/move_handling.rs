@@ -1,8 +1,7 @@
-use crate::board_plugin::{Board};
+use crate::board_plugin::Board;
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
 use crate::resources::board_options::BoardOptions;
 use bevy::prelude::*;
-
 
 pub fn move_system(
     board_options: Res<BoardOptions>,

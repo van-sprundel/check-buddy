@@ -2,8 +2,6 @@ use crate::resources::piece_type::*;
 use bevy::asset::AssetServer;
 use bevy::prelude::*;
 
-
-
 #[derive(Copy, Clone)]
 pub struct Piece(pub(crate) u32);
 
@@ -67,6 +65,16 @@ pub enum Direction {
 }
 
 pub const DIRECTION_OFFSETS: [i32; 8] = [8, 1, -8, -1, 9, -7, -9, 7];
+pub const KNIGHT_DIRECTION_OFFSETS: [[i32; 2]; 8] = [ //[Y,X]
+    [1, -2],
+    [2, -1],
+    [2, 1],
+    [1, 2],
+    [-1, 2],
+    [-2, 1],
+    [-2, -1],
+    [-1, -2]
+];
 
 impl Direction {
     pub fn from(index: usize) -> Self {

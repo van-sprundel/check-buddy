@@ -118,6 +118,7 @@ pub fn spawn_piece_to_cursor(
     let window = windows.primary_mut();
     window.set_cursor_visibility(false);
     if let Some(selected_position) = board_map.selected_square {
+        info!("Piece selected");
         let piece = board_map.board_map.get_piece(selected_position);
 
         commands
@@ -141,10 +142,7 @@ pub fn spawn_piece_to_cursor(
 #[derive(Component)]
 pub struct CursorPiece;
 
-pub fn piece_to_cursor(
-    windows: Res<Windows>,
-    mut query: Query<&mut Transform, With<CursorPiece>>,
-) {
+pub fn piece_to_cursor(windows: Res<Windows>, mut query: Query<&mut Transform, With<CursorPiece>>) {
     let window = windows.primary();
     for mut cursor_piece in query.iter_mut() {
         if let Some(position) = window.cursor_position() {
