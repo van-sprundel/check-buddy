@@ -2,7 +2,6 @@ use bevy::app::App;
 use bevy::DefaultPlugins;
 use chess::board_plugin::BoardPlugin;
 
-
 #[cfg(feature = "debug")]
 use colored::*;
 #[cfg(feature = "debug")]

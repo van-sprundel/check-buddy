@@ -1,9 +1,11 @@
+use bevy::prelude::debug;
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
-use bevy::prelude::debug;
 
-use crate::resources::piece::{Direction, Piece, Position, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS};
+use crate::resources::piece::{
+    Direction, Piece, Position, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
+};
 use crate::resources::piece_type::*;
 
 #[derive(Clone, Copy)]
@@ -75,7 +77,9 @@ impl BoardMap {
     pub fn get_active_color(&self) -> bool {
         self.active_color
     }
-    fn set_piece(&mut self, _on: Position, value: u32) { self.squares[_on[0]][_on[1]] = Piece(value); }
+    fn set_piece(&mut self, _on: Position, value: u32) {
+        self.squares[_on[0]][_on[1]] = Piece(value);
+    }
 
     /// make a move with check
     pub fn move_turn(&mut self, on: [usize; 2], to: [usize; 2]) -> bool {
@@ -224,8 +228,7 @@ impl BoardMap {
         let mut moves = vec![];
         for direction in KNIGHT_DIRECTION_OFFSETS {
             let new_pos = [direction[0] + from[0] as i32, direction[1] + from[1] as i32];
-            if (0..8).contains(&new_pos[0]) &&
-                (0..8).contains(&new_pos[1]) {
+            if (0..8).contains(&new_pos[0]) && (0..8).contains(&new_pos[1]) {
                 let to_move = [new_pos[0] as usize, new_pos[1] as usize];
                 let target_piece = self.squares[to_move[0]][to_move[1]];
                 if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
