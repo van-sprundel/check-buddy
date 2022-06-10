@@ -191,9 +191,9 @@ impl BoardMap {
         moves
     }
     pub fn gen_pawn(&self, from: Position) -> Vec<Position> {
-        let piece = self.squares[from[0]][from[1]];
+        let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
-        let shift = if piece.get_color() { -1 } else { 1 };
+        let shift = if piece_from.get_color() { -1 } else { 1 };
 
         // piece blocking
         let is_blocking = self.squares[(from[0] as i32 + shift) as usize][from[1]].is_piece();
@@ -202,14 +202,14 @@ impl BoardMap {
         }
 
         // hasn't moved yet
-        if (piece.is_black() && from[0] == 6 || piece.is_white() && from[0] == 1) && !is_blocking {
+        if (piece_from.is_black() && from[0] == 6 || piece_from.is_white() && from[0] == 1) && !is_blocking {
             moves.push([(from[0] as i32 + (shift * 2)) as usize, from[1]]);
         }
 
         if (1..8).contains(&from[1]) {
             let to_left_pos = [(from[0] as i32 + shift) as usize, from[1] - 1];
             let to_left = self.squares[to_left_pos[0]][to_left_pos[1]];
-            if to_left.is_piece() && to_left.get_color() != piece.get_color() {
+            if to_left.is_piece() && to_left.get_color() != piece_from.get_color() {
                 moves.push(to_left_pos);
             }
         }
@@ -217,7 +217,7 @@ impl BoardMap {
         if (0..7).contains(&from[1]) {
             let to_right_pos = [(from[0] as i32 + shift) as usize, from[1] + 1];
             let to_right = self.squares[to_right_pos[0]][to_right_pos[1]];
-            if to_right.is_piece() && to_right.get_color() != piece.get_color() {
+            if to_right.is_piece() && to_right.get_color() != piece_from.get_color() {
                 moves.push(to_right_pos);
             }
         }
