@@ -19,7 +19,7 @@ clearscreen = {version="1.0",optional=true}
 version = "0.7"
 optional = true
 default-features = false
-features = ["render","bevy_winit","png"]
+features = ["render","bevy_winit","png","wav"]
 
 # WASM support
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.bevy]
