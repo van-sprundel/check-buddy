@@ -114,6 +114,36 @@ impl BoardMap {
         }
         false
     }
+    /// generate only legal moves for piece
+    pub fn gen_legal_moves(&self, from: Position) -> Vec<Position> {
+        let mut temp_board = *self;
+        let moves = temp_board.gen_moves(from);
+        let mut legal_moves = vec![];
+        debug!("moves {:?}", &moves);
+
+        for to in moves.into_iter() {
+            let last_piece = temp_board.squares[to[0]][to[1]].0;
+            temp_board.make_move(from, to);
+            let next_moves = temp_board.gen_opponent_moves();
+            // println!("next possible moves: {:?}", next_moves);
+            if !next_moves.iter().any(|x| {
+                let next_piece = temp_board.squares[x[0]][x[1]];
+                if next_piece.is_piece() && next_piece.get_color() == temp_board.active_color {
+                    // println!("{:?}", next_piece);
+                    if let Some(t) = next_piece.get_type() {
+                        return t == PieceType::King;
+                    }
+                }
+                false
+            }) {
+                legal_moves.push(to);
+            }
+
+            temp_board.undo_move(from, to, last_piece);
+        }
+        debug!("legal moves {:?}", &legal_moves);
+        legal_moves
+    }
     /// generate all possible moves for piece
     pub fn gen_moves(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
@@ -129,7 +159,7 @@ impl BoardMap {
         }
         vec![]
     }
-    pub fn gen_sliding(&self, from: Position, piece_type: PieceType) -> Vec<Position> {
+    fn gen_sliding(&self, from: Position, piece_type: PieceType) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         let start = if piece_type == PieceType::Bishop {
@@ -162,7 +192,7 @@ impl BoardMap {
         }
         moves
     }
-    pub fn gen_king(&self, from: Position) -> Vec<Position> {
+    fn gen_king(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         for direction in DIRECTION_OFFSETS {
@@ -190,7 +220,7 @@ impl BoardMap {
         }
         moves
     }
-    pub fn gen_pawn(&self, from: Position) -> Vec<Position> {
+    fn gen_pawn(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         let shift = if piece_from.get_color() { -1 } else { 1 };
@@ -223,7 +253,7 @@ impl BoardMap {
         }
         moves
     }
-    pub fn gen_knight(&self, from: Position) -> Vec<Position> {
+    fn gen_knight(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         for direction in KNIGHT_DIRECTION_OFFSETS {
@@ -241,7 +271,7 @@ impl BoardMap {
 
         moves
     }
-    pub fn len_to_edge(&self, pos: Position, direction: Direction) -> usize {
+    fn len_to_edge(&self, pos: Position, direction: Direction) -> usize {
         let (rank, file) = (pos[0], pos[1]);
         let north = 7 - rank;
         let south = rank;
@@ -258,36 +288,6 @@ impl BoardMap {
             Direction::West => west,
             Direction::NorthWest => min(north, west),
         }
-    }
-    /// generate only legal moves for piece
-    pub fn gen_legal_moves(&self, from: Position) -> Vec<Position> {
-        let mut temp_board = *self;
-        let moves = temp_board.gen_moves(from);
-        let mut legal_moves = vec![];
-        debug!("moves {:?}", &moves);
-
-        for to in moves.into_iter() {
-            let last_piece = temp_board.squares[to[0]][to[1]].0;
-            temp_board.make_move(from, to);
-            let next_moves = temp_board.gen_opponent_moves();
-            // println!("next possible moves: {:?}", next_moves);
-            if !next_moves.iter().any(|x| {
-                let next_piece = temp_board.squares[x[0]][x[1]];
-                if next_piece.is_piece() && next_piece.get_color() == temp_board.active_color {
-                    // println!("{:?}", next_piece);
-                    if let Some(t) = next_piece.get_type() {
-                        return t == PieceType::King;
-                    }
-                }
-                false
-            }) {
-                legal_moves.push(to);
-            }
-
-            temp_board.undo_move(from, to, last_piece);
-        }
-        debug!("legal moves {:?}", &legal_moves);
-        legal_moves
     }
     /// make a move (without check)
     fn make_move(&mut self, from: Position, to: Position) {
