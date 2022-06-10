@@ -9,8 +9,8 @@ Chess engine using Bevy for GUI
 cargo run
 ```
 
-### Serving as WASM
-
+# WASM
+## Serving
 Make sure you have  WASM support and `wasm-server-runner` installed:
 
 ```commandline
@@ -24,7 +24,7 @@ Run with:
 cargo run --target wasm32-unknown-unknown
 ```
 
-### Building as WASM
+## Building
 
 Make sure you have wasm-bindgen installed:
 
