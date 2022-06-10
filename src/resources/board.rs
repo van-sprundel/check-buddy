@@ -232,7 +232,9 @@ impl BoardMap {
         }
 
         // hasn't moved yet
-        if (piece_from.is_black() && from[0] == 6 || piece_from.is_white() && from[0] == 1) && !is_blocking {
+        if (piece_from.is_black() && from[0] == 6 || piece_from.is_white() && from[0] == 1)
+            && !is_blocking
+        {
             moves.push([(from[0] as i32 + (shift * 2)) as usize, from[1]]);
         }
 
