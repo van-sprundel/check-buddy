@@ -4,6 +4,7 @@
 
 A Chess engine written in Rust, using Bevy for GUI
 
+![](assets/footage.gif)
 # Running
 ### Debug
 
