@@ -1,8 +1,8 @@
 ![](assets/logo.png)
 
-# Chess in Rust
+# Check Buddy
 
-Chess engine using Bevy for GUI
+A Chess engine written in Rust, using Bevy for GUI
 
 # Running
 ### Debug
