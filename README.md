@@ -1,3 +1,5 @@
+![](assets/logo.png)
+
 # Chess in Rust
 
 Chess engine using Bevy for GUI
