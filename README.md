@@ -1,11 +1,15 @@
-![](assets/logo.png)
+
+![](assets/logo128.png)
 
 # Check Buddy
 
 A Chess engine written in Rust, using Bevy for GUI
 
+
 ![](assets/footage.gif)
+
 # Running
+
 ### Debug
 
 ```commandline
@@ -13,8 +17,10 @@ cargo run
 ```
 
 # WASM
+
 ## Serving
-Make sure you have  WASM support and `wasm-server-runner` installed:
+
+Make sure you have WASM support and `wasm-server-runner` installed:
 
 ```commandline
 rustup target install wasm32-unknown-unknown
