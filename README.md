@@ -3,7 +3,7 @@
 
 # Check Buddy
 
-A Chess engine written in Rust, using [Bevy](https://github.com/bevyengine/bevy/) for GUI
+A standalone Chess engine written in Rust, using [Bevy](https://github.com/bevyengine/bevy/) for GUI
 
 
 ![](assets/footage.gif)
