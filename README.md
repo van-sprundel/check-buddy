@@ -1,7 +1,8 @@
-
-![](assets/logo128.png)
-
-# Check Buddy
+<h1 align="center">
+  <img src="assets/logo128.png" width=200 height=200/><br>
+  Check Buddy
+  </a>
+</h1>
 
 A standalone Chess engine written in Rust, using [Bevy](https://github.com/bevyengine/bevy/) for GUI
 
