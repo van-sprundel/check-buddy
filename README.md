@@ -11,10 +11,16 @@ A standalone Chess engine written in Rust, using [Bevy](https://github.com/bevye
 
 # Running
 
-### Debug
+### Debug (without Bevy)
 
 ```commandline
-cargo run
+cargo run 
+```
+
+### Debug (with Bevy)
+
+```commandline
+cargo run --release
 ```
 
 # WASM
