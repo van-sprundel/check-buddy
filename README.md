@@ -4,8 +4,8 @@
   </a>
 </h1>
 
-A standalone Chess engine written in Rust, using [Bevy](https://github.com/bevyengine/bevy/) for GUI
-
+<p>A standalone Chess engine written in Rust, using <a href="https://github.com/bevyengine/bevy/" target="_blank">Bevy</a> for GUI
+</p>
 
 ![](assets/footage.gif)
 
