@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="assets/logo128.png" width=200 height=200/><br>
+  <img src="assets/logo256.png" width=200 height=200/><br>
   Check Buddy
   </a>
 </h1>
