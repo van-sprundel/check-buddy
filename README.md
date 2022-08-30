@@ -4,10 +4,20 @@
   </a>
 </h1>
 
-<p>A standalone Chess engine written in Rust, using <a href="https://github.com/bevyengine/bevy/" target="_blank">Bevy</a> for GUI
+<p>A Chess engine written in Rust, using <a href="https://github.com/bevyengine/bevy/" target="_blank">Bevy</a> as GUI
 </p>
 
 ![](assets/footage.gif)
+
+# Currently implemented
+- [x] all pieces rules
+- [x] move check
+- [x] next move check
+- [x] illegal moves
+- [ ] en passant
+- [ ] pawn trade
+- [ ] win check
+- [x] fem string
 
 # Running
 
