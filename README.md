@@ -1,15 +1,15 @@
 <h1 align="center">
   <img src="assets/logo256.png" width=200 height=200/><br>
-  Check Buddy
+  ♟️ Check Buddy
   </a>
 </h1>
 
-<p>A Chess engine written in Rust, using <a href="https://github.com/bevyengine/bevy/" target="_blank">Bevy</a> as GUI
+<p>A Chess engine written in Rust, using <a href="https://github.com/bevyengine/bevy/" target="_blank">🐦Bevy</a> as GUI
 </p>
 
 ![](assets/footage.gif)
 
-# Currently implemented
+# ✔️ Currently implemented
 - [x] all pieces rules
 - [x] move check
 - [x] next move check
@@ -19,7 +19,7 @@
 - [ ] win check
 - [x] fem string
 
-# Running
+# ⚙️Running
 
 ### Debug (without Bevy)
 
@@ -33,7 +33,7 @@ cargo run
 cargo run --release
 ```
 
-# WASM
+# 🧱WASM
 
 ## Serving
 
