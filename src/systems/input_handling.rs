@@ -1,5 +1,5 @@
 use bevy::input::mouse::MouseButtonInput;
-use bevy::input::ElementState;
+use bevy::input::ButtonState;
 use bevy::prelude::*;
 
 use crate::board_plugin::Board;
@@ -17,7 +17,7 @@ pub fn input_handle_system(
 ) {
     let window = windows.primary();
     for e in button_evr.iter() {
-        if let ElementState::Pressed = e.state {
+        if let ButtonState::Pressed = e.state {
             let cursor_position = window.cursor_position().unwrap();
             if let Some(position) = board_map.get_position(&board_options, cursor_position) {
                 let piece = board_map.board_map.get_piece(position);
@@ -34,7 +34,7 @@ pub fn input_handle_system(
                 }
             }
         }
-        if let ElementState::Released = e.state {
+        if let ButtonState::Released = e.state {
             if let Some(cursor_position) = window.cursor_position() {
                 if let Some(position) = board_map.get_position(&board_options, cursor_position) {
                     if e.button == MouseButton::Left {

@@ -46,10 +46,13 @@ pub fn move_system(
                     }
                     let move_sound = asset_server.load("se/move_sound.wav");
                     let hit_sound = asset_server.load("se/hit_sound.wav");
-                    audio.play_with_settings(if !is_hit {move_sound} else {hit_sound},PlaybackSettings {
-                        volume: 0.5,
-                       ..default()
-                    });
+                    audio.play_with_settings(
+                        if !is_hit { move_sound } else { hit_sound },
+                        PlaybackSettings {
+                            volume: 0.5,
+                            ..default()
+                        },
+                    );
                 }
             }
         }
