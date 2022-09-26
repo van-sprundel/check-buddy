@@ -62,5 +62,8 @@ Run with:
 
 ```commandline
 cargo build --release --target wasm32-unknown-unknown
-wasm-bindgen --out-dir ./out/ --target web .\target\wasm32-unknown-unknown\release\chess.wasm
+# Windows
+x wasm-bindgen --out-dir ./out/ --target web .\target\wasm32-unknown-unknown\release\chess.wasm
+# Unix/macOS
+x wasm-bindgen --out-dir ./out/ --target web target/wasm32-unknown-unknown/release/chess.wasm
 ```
