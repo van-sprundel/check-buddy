@@ -148,7 +148,7 @@ impl BoardMap {
     }
     pub fn is_hit(&self, pos: Position) -> bool {
         let piece_on = self.get_piece(pos);
-        return piece_on.is_piece() && piece_on.get_color() != self.active_color;
+        piece_on.is_piece() && piece_on.get_color() != self.active_color
     }
     /// generate only legal moves for piece
     pub fn gen_legal_moves(&self, from: Position) -> Vec<Position> {
