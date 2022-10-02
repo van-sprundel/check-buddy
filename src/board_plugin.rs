@@ -37,7 +37,7 @@ impl Plugin for BoardPlugin {
 }
 
 pub struct Board {
-    pub(crate) board_map: BoardMap,
+    pub board_map: BoardMap,
     pub pieces: HashMap<Position, Entity>,
     pub(crate) selected_square: Option<Position>,
 }
@@ -45,9 +45,7 @@ pub struct Board {
 impl Default for Board {
     fn default() -> Self {
         Self {
-            board_map: BoardMap::from_fen(
-                "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-            ),
+            board_map: BoardMap::starting(),
             pieces: HashMap::with_capacity(64),
             selected_square: None,
         }
@@ -79,12 +77,12 @@ pub fn spawn_board(
     commands
         .spawn()
         .insert(Name::new("Board"))
+        .insert_bundle(SpriteBundle::default())
         .insert(Transform::from_xyz(
             window.width() / 2.,
             window.height() / 2.,
             0.,
         ))
-        .insert(GlobalTransform::default())
         .with_children(|parent| {
             (0..64).for_each(|i| {
                 let (x, y) = (i / 8, i % 8);

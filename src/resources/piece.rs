@@ -6,12 +6,16 @@ use bevy::prelude::*;
 pub struct Piece(pub(crate) u32);
 
 impl Piece {
-    pub fn get_color(&self) -> bool {
-        self.is_black()
+    pub fn get_color(&self) -> PieceColor {
+        if self.is_black() {
+            PieceColor::Black
+        } else {
+            PieceColor::White
+        }
     }
     pub fn get_type(&self) -> Option<PieceType> {
         let result = match self.0 % 8 {
-            PAWN => PieceType::Pawn,
+            PAWN => PieceType::Pawn(self.0 > 32),
             KNIGHT => PieceType::Knight,
             KING => PieceType::King,
             ROOK => PieceType::Rook,
@@ -22,33 +26,49 @@ impl Piece {
         Some(result)
     }
     pub(crate) fn is_white(&self) -> bool {
-        (8..16).contains(&self.0)
+        (8..16).contains(&(self.0 % 32))
     }
     pub(crate) fn is_black(&self) -> bool {
-        (16..24).contains(&self.0)
+        (16..24).contains(&(self.0 % 32))
     }
     pub(crate) fn is_piece(&self) -> bool {
-        self.0 != 0 && self.0 != WHITE && self.0 != BLACK
+        // self.0 != 0 && self.0 != WHITE && self.0 != BLACK
+        self.get_type().is_some() && self.0 != WHITE && self.0 != BLACK
     }
 
     pub(crate) fn get_icon(&self, asset_server: &Res<AssetServer>) -> Option<Handle<Image>> {
         self.get_type().map(|pt| {
             asset_server.load(match (pt, self.get_color()) {
-                (PieceType::Rook, false) => "sprites/white_rook.png",
-                (PieceType::Pawn, false) => "sprites/white_pawn.png",
-                (PieceType::Bishop, false) => "sprites/white_bishop.png",
-                (PieceType::Queen, false) => "sprites/white_queen.png",
-                (PieceType::King, false) => "sprites/white_king.png",
-                (PieceType::Knight, false) => "sprites/white_knight.png",
-                (PieceType::Rook, true) => "sprites/black_rook.png",
-                (PieceType::Pawn, true) => "sprites/black_pawn.png",
-                (PieceType::Bishop, true) => "sprites/black_bishop.png",
-                (PieceType::Queen, true) => "sprites/black_queen.png",
-                (PieceType::King, true) => "sprites/black_king.png",
-                (PieceType::Knight, true) => "sprites/black_knight.png",
+                (PieceType::Rook, PieceColor::White) => "sprites/white_rook.png",
+                (PieceType::Pawn(_), PieceColor::White) => "sprites/white_pawn.png",
+                (PieceType::Bishop, PieceColor::White) => "sprites/white_bishop.png",
+                (PieceType::Queen, PieceColor::White) => "sprites/white_queen.png",
+                (PieceType::King, PieceColor::White) => "sprites/white_king.png",
+                (PieceType::Knight, PieceColor::White) => "sprites/white_knight.png",
+                (PieceType::Rook, PieceColor::Black) => "sprites/black_rook.png",
+                (PieceType::Pawn(_), PieceColor::Black) => "sprites/black_pawn.png",
+                (PieceType::Bishop, PieceColor::Black) => "sprites/black_bishop.png",
+                (PieceType::Queen, PieceColor::Black) => "sprites/black_queen.png",
+                (PieceType::King, PieceColor::Black) => "sprites/black_king.png",
+                (PieceType::Knight, PieceColor::Black) => "sprites/black_knight.png",
             })
         })
     }
+}
+
+
+#[derive(Eq, PartialEq, Copy, Clone)]
+pub enum PieceColor {
+    Black,
+    White,
+}
+
+#[derive(Clone, Copy,Debug)]
+pub struct PieceMove {
+    pub from: Position,
+    pub to: Position,
+    pub en_passant: bool,
+    pub trade:bool
 }
 
 pub type Position = [usize; 2];

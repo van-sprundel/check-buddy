@@ -1,6 +1,6 @@
 use bevy::app::App;
 use bevy::DefaultPlugins;
-use chess::board_plugin::BoardPlugin;
+use check_buddy::board_plugin::BoardPlugin;
 
 #[cfg(feature = "debug")]
 use colored::*;
@@ -10,14 +10,14 @@ use std::io;
 #[cfg(not(feature = "debug"))]
 use bevy::prelude::*;
 #[cfg(feature = "debug")]
-use chess::resources::board::BoardMap;
+use check_buddy::resources::board::BoardMap;
 
 #[cfg(feature = "debug")]
 fn main() {
     let mut board = BoardMap::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
     loop {
-        println!("{:?}", board);
+        eprintln!("{:?}", board);
 
         let mut buffer = String::new();
         let mut stdin = io::stdin();
@@ -25,7 +25,7 @@ fn main() {
 
         buffer.retain(|c| !c.is_whitespace());
         if buffer.len() < 4 {
-            println!("{}", "Invalid syntax".red());
+            eprintln!("{}", "Invalid syntax".red());
             continue;
         }
 
@@ -46,7 +46,7 @@ fn main() {
             'g' => 6,
             'h' => 7,
             _ => {
-                println!("{}", "Invalid syntax".red());
+                eprintln!("{}", "Invalid syntax".red());
                 continue;
             }
         };
@@ -58,11 +58,11 @@ fn main() {
             || !(0..=8).contains(&to_rank)
             || !(0..=8).contains(&from_rank)
         {
-            println!("Move out of bounds");
+            eprintln!("Move out of bounds");
             continue;
         }
 
-        board.move_turn(from, to);
+        board.move_turn((from, to));
     }
 }
 
@@ -84,5 +84,5 @@ fn main() {
 
 #[cfg(not(feature = "debug"))]
 fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(Camera2dBundle::default());
 }

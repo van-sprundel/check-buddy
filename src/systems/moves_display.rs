@@ -26,12 +26,12 @@ pub fn show_moves(
         commands
             .spawn()
             .insert(Name::new("Move overlay"))
+            .insert_bundle(SpriteBundle::default())
             .insert(Transform::from_xyz(
                 window.width() / 2.,
                 window.height() / 2.,
                 2.,
             ))
-            .insert(GlobalTransform::default())
             .with_children(|parent| {
                 let moves = board_map.board_map.gen_legal_moves(ev.0);
                 for position in moves.iter() {

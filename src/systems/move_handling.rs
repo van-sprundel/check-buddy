@@ -2,6 +2,7 @@ use crate::board_plugin::Board;
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
 use crate::resources::board_options::BoardOptions;
 use bevy::prelude::*;
+use crate::resources::piece::{PieceColor, PieceMove};
 
 pub fn move_system(
     asset_server: Res<AssetServer>,
@@ -22,7 +23,9 @@ pub fn move_system(
             info!("{:?} {:?}", old_pos, new_pos);
             if let Some(old_piece) = board.pieces.clone().get(&old_pos) {
                 let is_hit = board.board_map.is_hit(new_pos);
-                if board.board_map.move_turn(old_pos, new_pos) {
+                let piece_move = PieceMove { from: old_pos, to: new_pos, en_passant: false, trade: false };
+                let en_passant = board.board_map.is_en_passant(piece_move);
+                if board.board_map.move_turn(piece_move) {
                     let transform = Transform::from_xyz(
                         (-board_options.tile_size * (7 - new_pos[1]) as f32)
                             - (board_options.tile_size / 2.),
@@ -30,6 +33,21 @@ pub fn move_system(
                             - (board_options.tile_size / 2.),
                         1.,
                     );
+                    if en_passant {
+                        let shift = match board.board_map.get_piece(old_pos).get_color() {
+                            PieceColor::Black => -1,
+                            PieceColor::White => 1
+                        };
+
+                        let step_new_pos = [((new_pos[0] as isize) - shift) as usize, new_pos[1]];
+                        eprintln!("move handling removing piece on {:?}",&step_new_pos);
+                        if let Some(step_new_piece) = board.pieces.get(&step_new_pos) {
+                            commands
+                                .entity(*step_new_piece)
+                                .despawn();
+                        }
+                    }
+
                     commands
                         .entity(*old_piece)
                         .remove::<Transform>()
@@ -46,10 +64,13 @@ pub fn move_system(
                     }
                     let move_sound = asset_server.load("se/move_sound.wav");
                     let hit_sound = asset_server.load("se/hit_sound.wav");
-                    audio.play_with_settings(if !is_hit {move_sound} else {hit_sound},PlaybackSettings {
-                        volume: 0.5,
-                       ..default()
-                    });
+                    audio.play_with_settings(
+                        if !is_hit { move_sound } else { hit_sound },
+                        PlaybackSettings {
+                            volume: 0.5,
+                            ..default()
+                        },
+                    );
                 }
             }
         }
