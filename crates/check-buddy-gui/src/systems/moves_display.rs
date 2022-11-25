@@ -1,6 +1,6 @@
+use crate::board_options::BoardOptions;
 use crate::board_plugin::Board;
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
-use crate::resources::board_options::BoardOptions;
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -127,7 +127,7 @@ pub fn spawn_piece_to_cursor(
                     custom_size: Some(Vec2::splat(board_options.tile_size)),
                     ..Default::default()
                 },
-                texture: piece.get_icon(&asset_server).unwrap(),
+                texture: asset_server.load(piece.get_icon().unwrap()),
                 transform: Transform::from_xyz(
                     selected_position[0] as f32 * board_options.tile_size,
                     selected_position[1] as f32 * board_options.tile_size,

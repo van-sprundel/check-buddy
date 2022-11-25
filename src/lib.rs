@@ -1,6 +1,1 @@
-extern crate core;
-
-pub mod board_plugin;
-pub mod events;
-pub mod resources;
-pub mod systems;
+pub use check_buddy_core;

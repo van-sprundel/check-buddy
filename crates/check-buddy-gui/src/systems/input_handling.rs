@@ -1,11 +1,10 @@
+use crate::board_options::BoardOptions;
 use bevy::input::mouse::MouseButtonInput;
 use bevy::input::ButtonState;
 use bevy::prelude::*;
 
 use crate::board_plugin::Board;
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
-
-use crate::resources::board_options::BoardOptions;
 
 pub fn input_handle_system(
     board_options: Res<BoardOptions>,

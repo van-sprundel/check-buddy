@@ -1,5 +1,5 @@
-use check_buddy::resources::board::BoardMap;
-use check_buddy::resources::piece::{PieceMove, Position};
+use check_buddy_core::board::BoardMap;
+use check_buddy_core::piece::piece_move::{PieceMove, Position};
 
 #[test]
 fn move_integration_test_should_return_valid_move_count_on_depth_one() {
@@ -14,7 +14,7 @@ fn move_integration_test_should_match_shannon_table() {
     assert_eq!(20, move_integration(board_map, 1));
     assert_eq!(400, move_integration(board_map, 2));
     assert_eq!(8902, move_integration(board_map, 3));
-    // assert_eq!(197281, move_integration(board_map, 4));
+    assert_eq!(197281, move_integration(board_map, 4));
 }
 
 fn move_integration(board_map: BoardMap, depth: usize) -> usize {
@@ -40,7 +40,12 @@ fn move_integration(board_map: BoardMap, depth: usize) -> usize {
 
     for (from, to) in positions {
         let mut board_map = board_map.clone();
-        if board_map.move_turn(PieceMove {from,to,en_passant: false, trade: false}) {
+        if board_map.move_turn(PieceMove {
+            from,
+            to,
+            en_passant: false,
+            trade: false,
+        }) {
             num_moves += move_integration(board_map, depth - 1);
         }
     }

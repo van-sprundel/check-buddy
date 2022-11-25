@@ -1,8 +1,9 @@
+use crate::board_options::BoardOptions;
 use crate::board_plugin::Board;
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
-use crate::resources::board_options::BoardOptions;
 use bevy::prelude::*;
-use crate::resources::piece::{PieceColor, PieceMove};
+use check_buddy_core::piece::piece_move::PieceMove;
+use check_buddy_core::piece::PieceColor;
 
 pub fn move_system(
     asset_server: Res<AssetServer>,
@@ -23,7 +24,12 @@ pub fn move_system(
             info!("{:?} {:?}", old_pos, new_pos);
             if let Some(old_piece) = board.pieces.clone().get(&old_pos) {
                 let is_hit = board.board_map.is_hit(new_pos);
-                let piece_move = PieceMove { from: old_pos, to: new_pos, en_passant: false, trade: false };
+                let piece_move = PieceMove {
+                    from: old_pos,
+                    to: new_pos,
+                    en_passant: false,
+                    trade: false,
+                };
                 let en_passant = board.board_map.is_en_passant(piece_move);
                 if board.board_map.move_turn(piece_move) {
                     let transform = Transform::from_xyz(
@@ -36,15 +42,13 @@ pub fn move_system(
                     if en_passant {
                         let shift = match board.board_map.get_piece(old_pos).get_color() {
                             PieceColor::Black => -1,
-                            PieceColor::White => 1
+                            PieceColor::White => 1,
                         };
 
                         let step_new_pos = [((new_pos[0] as isize) - shift) as usize, new_pos[1]];
-                        eprintln!("move handling removing piece on {:?}",&step_new_pos);
+                        // eprintln!("move handling removing piece on {:?}", &step_new_pos);
                         if let Some(step_new_piece) = board.pieces.get(&step_new_pos) {
-                            commands
-                                .entity(*step_new_piece)
-                                .despawn();
+                            commands.entity(*step_new_piece).despawn();
                         }
                     }
 

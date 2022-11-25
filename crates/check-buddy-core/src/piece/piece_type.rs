@@ -1,4 +1,4 @@
-use crate::resources::piece::Piece;
+use crate::piece::Piece;
 use std::fmt::{Debug, Formatter};
 
 pub const NONE: u32 = 0;
@@ -12,7 +12,7 @@ pub const QUEEN: u32 = 6;
 pub const WHITE: u32 = 8;
 pub const BLACK: u32 = 16;
 
-#[derive(PartialOrd, PartialEq, Debug)]
+#[derive(PartialOrd, PartialEq, Eq, Debug)]
 pub enum PieceType {
     Rook,
     Pawn(bool),

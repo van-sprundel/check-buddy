@@ -1,11 +1,11 @@
+use crate::board_options::BoardOptions;
 use bevy::app::App;
 use bevy::prelude::*;
+use check_buddy_core::board::BoardMap;
+use check_buddy_core::piece::piece_move::Position;
 use std::collections::HashMap;
 
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
-use crate::resources::board::BoardMap;
-use crate::resources::board_options::BoardOptions;
-use crate::resources::piece::Position;
 
 use crate::systems;
 use crate::systems::moves_display::{
@@ -108,14 +108,15 @@ pub fn spawn_board(
                 // piece
                 let position = [7 - y, 7 - x];
                 let piece = board_map.board_map.get_piece(position);
-                if let Some(texture) = piece.get_icon(&asset_server) {
+
+                if let Some(path) = piece.get_icon() {
                     let entity = parent
                         .spawn_bundle(SpriteBundle {
                             sprite: Sprite {
                                 custom_size: Some(Vec2::splat(board_options.tile_size)),
                                 ..Default::default()
                             },
-                            texture,
+                            texture: asset_server.load(path),
                             transform: pos,
                             ..Default::default()
                         })

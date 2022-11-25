@@ -1,12 +1,11 @@
+use crate::piece::piece_move::{
+    Direction, PieceMove, Position, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
+};
+use crate::piece::{piece_type::*, Piece, PieceColor};
 use std::borrow::BorrowMut;
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
-
-use crate::resources::piece::{
-    Direction, Piece, PieceColor, PieceMove, Position, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
-};
-use crate::resources::piece_type::*;
 
 #[derive(Clone, Copy)]
 pub struct BoardMap {
@@ -77,6 +76,18 @@ impl BoardMap {
     pub fn get_piece(&self, pos: Position) -> Piece {
         self.squares[pos[0]][pos[1]]
     }
+    pub fn find_piece(&self, piece_color: PieceColor, piece_type: PieceType) -> Option<Position> {
+        for (y, row) in self.squares.iter().enumerate() {
+            for (x, p) in row.iter().enumerate() {
+                if let Some(t) = p.get_type() {
+                    if t == piece_type && p.get_color() == piece_color {
+                        return Some([y, x]);
+                    }
+                }
+            }
+        }
+        None
+    }
     pub fn get_piece_mut(&mut self, pos: Position) -> &mut Piece {
         self.squares[pos[0]][pos[1]].borrow_mut()
     }
@@ -94,7 +105,7 @@ impl BoardMap {
         let (x, y) = (from[0], from[1]);
         let piece = self.squares[x][y];
         if !piece.is_piece() {
-            eprintln!("You're trying to move a piece that's empty");
+            // eprintln!("You're trying to move a piece that's empty");
             return false;
         }
         // if (piece.is_white() && !self.active_color) || (piece.is_black() && self.active_color) {
@@ -104,33 +115,31 @@ impl BoardMap {
                 let en_passant = self.is_en_passant(piece_move);
                 let trade = self.is_trade(piece_move);
 
-                self.make_move(PieceMove { from: [x, y], to, en_passant, trade });
+                self.make_move(PieceMove {
+                    from: [x, y],
+                    to,
+                    en_passant,
+                    trade,
+                });
 
                 let piece_to = &mut self.get_piece(to);
 
-                if let Some(new_piece) = piece_to.get_type() {
-                    if let PieceType::Pawn(en_passant) = new_piece {
-                        if en_passant {
-                            piece_to.0 -= 32;
-                        }
+                if let Some(PieceType::Pawn(_)) = piece_to.get_type() {
+                    if should_enable_en_passant {
+                        // eprintln!("Piece became en passantable! ({},{})", to[0], to[1]);
+                        self.get_piece_mut(to).0 += 32;
+                    } else if self.get_piece(to).0 > 32 {
+                        self.get_piece_mut(to).0 -= 32;
                     }
                 }
 
-                if should_enable_en_passant {
-                    if let Some(new_piece) = piece_to.get_type() {
-                        if let PieceType::Pawn(_) = new_piece {
-                            eprintln!("Piece is en passantable! ({},{})", to[0], to[1]);
-                            self.get_piece_mut(to).0 += 32;
-                        }
-                    }
-                }
                 self.switch_active_color();
                 return true;
             } else {
-                eprintln!("Move was invalid");
+                // eprintln!("Move was invalid");
             }
         } else {
-            eprintln!("Piece is not yours");
+            // eprintln!("Piece is not yours");
         }
         false
     }
@@ -160,7 +169,12 @@ impl BoardMap {
         for to in moves.into_iter() {
             let last_piece = temp_board.squares[to[0]][to[1]].0;
 
-            temp_board.make_move(PieceMove { from, to, en_passant: false, trade: false });
+            temp_board.make_move(PieceMove {
+                from,
+                to,
+                en_passant: false,
+                trade: false,
+            });
             let next_moves = temp_board.gen_opponent_moves();
             // eprintln!("next possible moves: {:?}", next_moves);
             if !next_moves.iter().any(|x| {
@@ -176,7 +190,15 @@ impl BoardMap {
                 legal_moves.push(to);
             }
 
-            temp_board.undo_move(PieceMove { from, to, en_passant: false, trade: false }, last_piece);
+            temp_board.undo_move(
+                PieceMove {
+                    from,
+                    to,
+                    en_passant: false,
+                    trade: false,
+                },
+                last_piece,
+            );
         }
         // eprintln!("legal moves {:?}", &legal_moves);
         legal_moves
@@ -272,13 +294,13 @@ impl BoardMap {
         }
 
         // hasn't moved yet
-        let vertical = (from[0] as i32 + (shift * 2)) as usize;
+        let vertical = (from[0] as i32 + shift * 2) as usize;
         if vertical < 8 {
-            let is_blocking = is_blocking && self.squares[vertical][from[1]].is_piece();
-            if (piece_from.is_black() && from[0] == 6 || piece_from.is_white() && from[0] == 1)
+            let is_blocking = is_blocking || self.squares[vertical][from[1]].is_piece();
+            if ((piece_from.is_black() && from[0] == 6) || (piece_from.is_white() && from[0] == 1))
                 && !is_blocking
             {
-                moves.push([(from[0] as i32 + (shift * 2)) as usize, from[1]]);
+                moves.push([vertical, from[1]]);
             }
         }
 
@@ -295,14 +317,11 @@ impl BoardMap {
             // en passant
             // x  .  .
             // _  p  .
-            let to_left_pos = [from[0], from[1] - 1];
-            let to_left = self.squares[to_left_pos[0]][to_left_pos[1]];
-            if let Some(piece_type) = to_left.get_type() {
-                if piece_type == PieceType::Pawn(true)
-                    && to_left.get_color() != piece_from.get_color()
-                {
-                    eprintln!("piece on left ({:?}) is en passantable!", to_left_pos);
-                    let to_en_passant = [to_left_pos[0] + 1, to_left_pos[1]];
+            let to_left = self.squares[from[0]][from[1] - 1];
+            if let Some(PieceType::Pawn(en_passantable)) = to_left.get_type() {
+                if en_passantable && to_left.get_color() != piece_from.get_color() {
+                    // eprintln!("piece on left ({:?}) is en passantable!", [from[0], from[1] - 1]);
+                    let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] - 1];
                     moves.push(to_en_passant);
                 }
             }
@@ -317,17 +336,15 @@ impl BoardMap {
             if to_top_right.is_piece() && to_top_right.get_color() != piece_from.get_color() {
                 moves.push(to_top_right_pos);
             }
+
             // en passant
             // .  .  x
             // .  p  _
-            let to_right_pos = [from[0], from[1] + 1];
-            let to_right = self.squares[to_right_pos[0]][to_right_pos[1]];
-            if let Some(piece_type) = to_right.get_type() {
-                if piece_type == PieceType::Pawn(true)
-                    && to_right.get_color() != piece_from.get_color()
-                {
-                    eprintln!("piece on right ({:?}) is en passantable!", to_right_pos);
-                    let to_en_passant = [to_right_pos[0] + 1, to_right_pos[1]];
+            let to_right = self.squares[from[0]][from[1] + 1];
+            if let Some(PieceType::Pawn(en_passantable)) = to_right.get_type() {
+                if en_passantable && to_right.get_color() != piece_from.get_color() {
+                    // eprintln!("piece on right ({:?}) is en passantable!", [from[0], from[1] + 1]);
+                    let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] + 1];
                     moves.push(to_en_passant);
                 }
             }
@@ -372,19 +389,28 @@ impl BoardMap {
     }
     /// make a move (without check)
     fn make_move(&mut self, piece_move: PieceMove) {
-        let PieceMove { from, to, en_passant, trade } = piece_move;
+        let PieceMove {
+            from,
+            to,
+            en_passant,
+            trade,
+        } = piece_move;
 
         if en_passant {
-            eprintln!("move is an en passant!");
-            let shift = if self.get_piece(from).get_color() == PieceColor::Black { -1 } else { 1 };
-            let to_step = [(to[0] as isize - shift) as usize, to[1]];
+            // eprintln!("move is an en passant!");
+            let shift = if self.get_piece(from).get_color() == PieceColor::Black {
+                -1
+            } else {
+                1
+            };
+            let to_step = [(to[0] as isize + shift) as usize, to[1]];
             self.set_piece(to_step, BLACK);
         }
 
         if trade {
             let color = match self.get_piece(from).get_color() {
                 PieceColor::Black => BLACK,
-                PieceColor::White => WHITE
+                PieceColor::White => WHITE,
             };
             self.set_piece(to, QUEEN | color);
         } else {
@@ -430,20 +456,18 @@ impl BoardMap {
     fn move_should_enable_en_passant(&self, piece_move: PieceMove) -> bool {
         let PieceMove { from, to, .. } = piece_move;
         let piece = self.get_piece(from);
-        if let Some(piece_type) = piece.get_type() {
-            if let PieceType::Pawn(_) = piece_type {
-                if *self.get_active_color() == piece.get_color() {
-                    return match piece.get_color() {
-                        PieceColor::Black => from[0] == 6 && to[0] == 4,
-                        PieceColor::White => from[0] == 1 && to[0] == 3,
-                    };
-                }
+        if let Some(PieceType::Pawn(_)) = piece.get_type() {
+            if *self.get_active_color() == piece.get_color() {
+                return match piece.get_color() {
+                    PieceColor::Black => from[0] == 6 && to[0] == 4,
+                    PieceColor::White => from[0] == 1 && to[0] == 3,
+                };
             }
         }
         false
     }
 
-    pub(crate) fn is_en_passant(&self, piece_move: PieceMove) -> bool {
+    pub fn is_en_passant(&self, piece_move: PieceMove) -> bool {
         // only en passant moves can be moved diagonally on an empty square
         let PieceMove { from, to, .. } = piece_move;
         let piece = self.get_piece(from);
@@ -451,13 +475,15 @@ impl BoardMap {
             if piece_type == PieceType::Pawn(false) || piece_type == PieceType::Pawn(true) {
                 let shift = match piece.get_color() {
                     PieceColor::Black => -1,
-                    PieceColor::White => 1
+                    PieceColor::White => 1,
                 };
                 let step_pos = [(to[0] as isize - shift) as usize, to[1]];
                 let step_piece = self.get_piece(step_pos);
                 if step_piece.is_piece() && step_piece.get_color() != piece.get_color() {
                     if let Some(step_piece_type) = step_piece.get_type() {
-                        if step_piece_type == PieceType::Pawn(false) || step_piece_type == PieceType::Pawn(true) {
+                        if step_piece_type == PieceType::Pawn(false)
+                            || step_piece_type == PieceType::Pawn(true)
+                        {
                             return true;
                         }
                     }
@@ -470,9 +496,8 @@ impl BoardMap {
         let PieceMove { from, to, .. } = piece_move;
         let piece = self.get_piece(from);
         if let Some(piece_type) = piece.get_type() {
-            return
-                (piece_type == PieceType::Pawn(false) || piece_type == PieceType::Pawn(true)) &&
-                    (to[0] == 7 || to[0] == 0);
+            return (piece_type == PieceType::Pawn(false) || piece_type == PieceType::Pawn(true))
+                && (to[0] == 7 || to[0] == 0);
         }
 
         false
@@ -493,7 +518,7 @@ impl Debug for BoardMap {
                 PieceColor::White => "white",
             }
         )
-            .unwrap();
+        .unwrap();
 
         Ok(())
     }
