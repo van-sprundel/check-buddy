@@ -8,13 +8,12 @@ fn move_integration_test_should_return_valid_move_count_on_depth_one() {
 }
 
 #[test]
-fn move_integration_test_should_match_shannon_table() {
-    let board_map = BoardMap::starting();
-
-    assert_eq!(20, move_integration(board_map, 1));
-    assert_eq!(400, move_integration(board_map, 2));
-    assert_eq!(8902, move_integration(board_map, 3));
-    assert_eq!(197281, move_integration(board_map, 4));
+fn move_integration_test_should_match_shannon_number() {
+    assert_eq!(20, move_integration(BoardMap::starting(), 1));
+    assert_eq!(400, move_integration(BoardMap::starting(), 2));
+    assert_eq!(8902, move_integration(BoardMap::starting(), 3));
+    assert_eq!(197281, move_integration(BoardMap::starting(), 4));
+    // assert_eq!(4865609, move_integration(BoardMap::starting(), 5));
 }
 
 fn move_integration(board_map: BoardMap, depth: usize) -> usize {

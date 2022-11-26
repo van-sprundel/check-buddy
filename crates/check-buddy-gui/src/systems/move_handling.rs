@@ -2,8 +2,8 @@ use crate::board_options::BoardOptions;
 use crate::board_plugin::Board;
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
 use bevy::prelude::*;
-use check_buddy_core::piece::piece_move::PieceMove;
-use check_buddy_core::piece::PieceColor;
+use check_buddy_core::piece_move::PieceMove;
+use check_buddy_core::PieceColor;
 
 pub fn move_system(
     asset_server: Res<AssetServer>,

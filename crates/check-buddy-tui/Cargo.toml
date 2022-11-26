@@ -1,5 +1,5 @@
 [package]
-name = "check-buddy-cli"
+name = "check-buddy-tui"
 version = "0.1.0"
 edition = "2021"
 

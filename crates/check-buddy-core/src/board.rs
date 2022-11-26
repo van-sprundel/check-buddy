@@ -1,4 +1,4 @@
-use crate::piece::piece_move::{
+use crate::piece_move::{
     Direction, PieceMove, Position, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
 };
 use crate::piece::{piece_type::*, Piece, PieceColor};
@@ -7,7 +7,7 @@ use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
-#[derive(Clone, Copy)]
+#[derive(Clone,Copy)]
 pub struct BoardMap {
     squares: [[Piece; 8]; 8],
     active_color: PieceColor, // white is false, black is true
@@ -76,17 +76,18 @@ impl BoardMap {
     pub fn get_piece(&self, pos: Position) -> Piece {
         self.squares[pos[0]][pos[1]]
     }
-    pub fn find_piece(&self, piece_color: PieceColor, piece_type: PieceType) -> Option<Position> {
+    pub fn find_piece(&self, piece_color: PieceColor, piece_type: PieceType) -> Vec<Position> {
+        let mut vec = vec![];
         for (y, row) in self.squares.iter().enumerate() {
             for (x, p) in row.iter().enumerate() {
                 if let Some(t) = p.get_type() {
                     if t == piece_type && p.get_color() == piece_color {
-                        return Some([y, x]);
+                        vec.push([y, x]);
                     }
                 }
             }
         }
-        None
+        vec
     }
     pub fn get_piece_mut(&mut self, pos: Position) -> &mut Piece {
         self.squares[pos[0]][pos[1]].borrow_mut()
@@ -98,7 +99,8 @@ impl BoardMap {
         self.squares[on[0]][on[1]] = Piece(value);
     }
 
-    /// make a move with check
+    /// makes a move with check
+    ///
     /// returns true if move was successful
     pub fn move_turn(&mut self, piece_move: PieceMove) -> bool {
         let PieceMove { from, to, .. } = piece_move;
@@ -518,7 +520,7 @@ impl Debug for BoardMap {
                 PieceColor::White => "white",
             }
         )
-        .unwrap();
+            .unwrap();
 
         Ok(())
     }
