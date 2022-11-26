@@ -17,7 +17,9 @@
 - [x] en passant
 - [ ] pawn trade
 - [ ] win check
-- [x] fem string
+- [ ] fem string
+  - [x] from
+  - [ ] to
 
 # ⚙️Running
 
