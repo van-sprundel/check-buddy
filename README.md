@@ -14,7 +14,7 @@
 - [x] move check
 - [x] next move check
 - [x] illegal moves
-- [ ] en passant
+- [x] en passant
 - [ ] pawn trade
 - [ ] win check
 - [x] fem string
