@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use check_buddy_gui::board_plugin::BoardPlugin;
+use check_buddy_bevy::board_plugin::BoardPlugin;
 
 fn main() {
     let mut app = App::new();

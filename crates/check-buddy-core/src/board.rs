@@ -6,6 +6,7 @@ use std::borrow::BorrowMut;
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
+use anyhow::{Error, Result, anyhow};
 
 #[derive(Clone, Copy)]
 pub struct BoardMap {
@@ -28,12 +29,10 @@ impl BoardMap {
     pub fn empty() -> Self {
         BoardMap::default()
     }
-
+    /// starting position: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     pub fn starting() -> Self {
         BoardMap::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
     }
-    /// starting position: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-    /// white is uppercase, black is lowercase
     pub fn from_fen(fen: impl Into<String>) -> Self {
         let fen = fen.into();
         let mut board = Self::default();
@@ -140,15 +139,13 @@ impl BoardMap {
     /// makes a move with check
     ///
     /// returns true if move was successful
-    pub fn move_turn(&mut self, piece_move: PieceMove) -> bool {
+    pub fn move_turn(&mut self, piece_move: PieceMove) -> Result<()> {
         let PieceMove { from, to, .. } = piece_move;
         let (x, y) = (from[0], from[1]);
         let piece = self.squares[x][y];
         if !piece.is_piece() {
-            // eprintln!("You're trying to move a piece that's empty");
-            return false;
+            return Err(anyhow!("You're trying to move a piece that's empty"));
         }
-        // if (piece.is_white() && !self.active_color) || (piece.is_black() && self.active_color) {
         if piece.get_color() == self.active_color {
             let should_enable_en_passant = self.move_should_enable_en_passant(piece_move);
             if self.is_valid_move(piece_move) {
@@ -174,14 +171,13 @@ impl BoardMap {
                 }
 
                 self.switch_active_color();
-                return true;
+                return Ok(());
             } else {
-                // eprintln!("Move was invalid");
+                return Err(anyhow!("Move was invalid"));
             }
         } else {
-            // eprintln!("Piece is not yours");
+            return Err(anyhow!("Piece is not yours"));
         }
-        false
     }
     /// check if move is valid
     pub fn is_valid_move(&self, piece_move: PieceMove) -> bool {
@@ -221,9 +217,7 @@ impl BoardMap {
                 let next_piece = temp_board.squares[x[0]][x[1]];
                 if next_piece.is_piece() && next_piece.get_color() == temp_board.active_color {
                     // eprintln!("{:?}", next_piece);
-                    if let Some(t) = next_piece.get_type() {
-                        return t == PieceType::King;
-                    }
+                    return Some(PieceType::King) == next_piece.get_type();
                 }
                 false
             }) {
@@ -258,7 +252,7 @@ impl BoardMap {
         }
         vec![]
     }
-    fn gen_sliding(&self, from: Position, piece_type: PieceType) -> Vec<Position> {
+    pub fn gen_sliding(&self, from: Position, piece_type: PieceType) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         let start = if piece_type == PieceType::Bishop {
@@ -276,7 +270,7 @@ impl BoardMap {
 
                 if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
                     // your own color is in the way
-                    // eprintln!("Piece is yours!");
+                    // eprintln!("Piece is yours! {:?}",target_move);
                     break;
                 }
                 moves.push(target_move);
@@ -291,13 +285,13 @@ impl BoardMap {
         }
         moves
     }
-    fn gen_king(&self, from: Position) -> Vec<Position> {
+    pub fn gen_king(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
-        for direction in DIRECTION_OFFSETS {
+        for (direction, offset) in DIRECTION_OFFSETS.iter().enumerate() {
             let index = from[0] * 8 + from[1];
-            let target_index = index as i32 + direction;
-            if !(0..=63).contains(&target_index) {
+            let target_index = index as i32 + offset;
+            if !(0..=63).contains(&target_index) || self.len_to_edge(from, Direction::from(direction as usize)) == 0 {
                 continue;
             }
             let target_move = [target_index as usize / 8, target_index as usize % 8];
@@ -305,7 +299,7 @@ impl BoardMap {
 
             if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
                 // your own color is in the way
-                // eprintln!("Piece is yours!");
+                // eprintlnln!("Piece is yours!");
                 continue;
             }
             moves.push(target_move);
@@ -313,13 +307,13 @@ impl BoardMap {
 
             if target_piece.is_piece() && target_piece.get_color() != piece_from.get_color() {
                 // Enemy piece and capturable
-                // eprintln!("Piece is not yours, but you should still break the loop!");
+                // eprintln!("A piece that's yours is blocking any other moves");
                 continue;
             }
         }
         moves
     }
-    fn gen_pawn(&self, from: Position) -> Vec<Position> {
+    pub fn gen_pawn(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         let shift = match piece_from.get_color() {
@@ -398,7 +392,7 @@ impl BoardMap {
         }
         moves
     }
-    fn gen_knight(&self, from: Position) -> Vec<Position> {
+    pub fn gen_knight(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         for direction in KNIGHT_DIRECTION_OFFSETS {
@@ -549,7 +543,7 @@ impl Debug for BoardMap {
             writeln!(f, "{} {:?}", 8 - x, self.squares[7 - x]).unwrap();
         }
         writeln!(f, "   a   b   c   d   e   f   g   h").unwrap();
-        writeln!(f, "fen: {}",self.get_fen()).unwrap();
+        writeln!(f, "fen: {}", self.get_fen()).unwrap();
         writeln!(
             f,
             "{}'s turn",

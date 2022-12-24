@@ -2,8 +2,6 @@ use anyhow::{anyhow, Result};
 use check_buddy_core::BoardMap;
 use check_buddy_core::piece_move::PieceMove;
 use check_buddy_core::piece_type::PieceType;
-use colored::Colorize;
-use std::fmt::{Display, Error};
 use std::io;
 use std::io::Write;
 use std::ops::Sub;
