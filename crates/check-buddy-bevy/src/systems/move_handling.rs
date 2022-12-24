@@ -33,8 +33,10 @@ pub fn move_system(
                 let en_passant = board.board_map.is_en_passant(piece_move);
                 if board.board_map.move_turn(piece_move).is_ok() {
                     let transform = Transform::from_xyz(
-                        (-board_options.tile_size * (7 - new_pos[1]) as f32) - (board_options.tile_size / 2.),
-                        (-board_options.tile_size * (7 - new_pos[0]) as f32) - (board_options.tile_size / 2.),
+                        (-board_options.tile_size * (7 - new_pos[1]) as f32)
+                            - (board_options.tile_size / 2.),
+                        (-board_options.tile_size * (7 - new_pos[0]) as f32)
+                            - (board_options.tile_size / 2.),
                         1.,
                     );
                     if en_passant {

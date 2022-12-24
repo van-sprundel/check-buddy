@@ -1,7 +1,5 @@
-use check_buddy_core::piece_move::{Position};
-use check_buddy_core::piece_type::{
-    BISHOP, BLACK, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE,
-};
+use check_buddy_core::piece_move::Position;
+use check_buddy_core::piece_type::{BISHOP, BLACK, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE};
 use check_buddy_core::{BoardMap, Piece};
 
 #[test]

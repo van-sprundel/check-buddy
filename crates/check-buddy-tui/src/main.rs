@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
-use check_buddy_core::BoardMap;
 use check_buddy_core::piece_move::PieceMove;
 use check_buddy_core::piece_type::PieceType;
+use check_buddy_core::BoardMap;
 use std::io;
 use std::io::Write;
 use std::ops::Sub;
@@ -41,7 +41,7 @@ fn parse_move(board: &mut BoardMap, buffer: &String) -> Result<PieceMove> {
     move_data.reverse();
 
     let piece_type = if non_pawn_move {
-         match move_data.pop().ok_or(anyhow!("can't parse"))? {
+        match move_data.pop().ok_or(anyhow!("can't parse"))? {
             'B' => PieceType::Bishop,
             'N' => PieceType::Knight,
             'K' => PieceType::King,
@@ -58,10 +58,7 @@ fn parse_move(board: &mut BoardMap, buffer: &String) -> Result<PieceMove> {
     for from_position in positions {
         let mut move_data = move_data.clone();
 
-        let rank = (move_data
-            .pop()
-            .ok_or(anyhow!("can't parse"))? as usize)
-            .sub(97);
+        let rank = (move_data.pop().ok_or(anyhow!("can't parse"))? as usize).sub(97);
 
         let file = move_data
             .pop()

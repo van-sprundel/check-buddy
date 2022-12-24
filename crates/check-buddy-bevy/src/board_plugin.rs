@@ -1,8 +1,8 @@
 use crate::board_options::BoardOptions;
 use bevy::app::App;
 use bevy::prelude::*;
-use check_buddy_core::BoardMap;
 use check_buddy_core::piece_move::Position;
+use check_buddy_core::BoardMap;
 use std::collections::HashMap;
 
 use crate::events::{PieceClickedEvent, PieceReleasedEvent};
