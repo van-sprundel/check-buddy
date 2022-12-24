@@ -3,8 +3,8 @@ pub mod piece_type;
 
 use piece_type::*;
 
-#[derive(Copy, Clone)]
-pub struct Piece(pub(crate) u32);
+#[derive(Copy, Clone,PartialEq,Eq)]
+pub struct Piece(pub u32);
 
 impl Piece {
     pub fn get_color(&self) -> PieceColor {
@@ -56,7 +56,7 @@ impl Piece {
     }
 }
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum PieceColor {
     Black,
     White,

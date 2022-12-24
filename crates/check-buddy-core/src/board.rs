@@ -7,7 +7,7 @@ use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
 
-#[derive(Clone,Copy)]
+#[derive(Clone, Copy)]
 pub struct BoardMap {
     squares: [[Piece; 8]; 8],
     active_color: PieceColor, // white is false, black is true
@@ -25,12 +25,17 @@ impl Default for BoardMap {
 }
 
 impl BoardMap {
+    pub fn empty() -> Self {
+        BoardMap::default()
+    }
+
     pub fn starting() -> Self {
         BoardMap::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
     }
     /// starting position: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
     /// white is uppercase, black is lowercase
-    pub fn from_fen(fen: &str) -> Self {
+    pub fn from_fen(fen: impl Into<String>) -> Self {
+        let fen = fen.into();
         let mut board = Self::default();
         let sections = fen.split_whitespace().collect::<Vec<_>>();
         let placement = sections[0].split('/').collect::<Vec<_>>();
@@ -58,11 +63,15 @@ impl BoardMap {
                 }
             }
         });
-        board.active_color = if let Some(c) = sections[1].chars().next() {
-            match c {
-                'w' => PieceColor::White,
-                'b' => PieceColor::Black,
-                _ => unreachable!("FEN incorrect"),
+        board.active_color = if let Some(string) = sections.get(1) {
+            if let Some(c) = string.chars().next() {
+                match c {
+                    'w' => PieceColor::White,
+                    'b' => PieceColor::Black,
+                    _ => unreachable!("FEN incorrect"),
+                }
+            } else {
+                PieceColor::White
             }
         } else {
             PieceColor::White
@@ -71,11 +80,40 @@ impl BoardMap {
         board
     }
     pub fn get_fen(&self) -> String {
-        todo!()
+        let mut fen = String::new();
+        let mut squares = self.squares;
+        squares.reverse();
+        for row in squares {
+            let mut space = 0;
+            for col in row {
+                if let Some(piece_type) = col.get_type() {
+                    if space != 0 {
+                        fen.push_str(space.to_string().as_str());
+                        space = 0;
+                    }
+
+                    match piece_type {
+                        PieceType::Rook => fen.push(if col.get_color() == PieceColor::Black { 'r' } else { 'R' }),
+                        PieceType::Pawn(_) => fen.push(if col.get_color() == PieceColor::Black { 'p' } else { 'P' }),
+                        PieceType::King => fen.push(if col.get_color() == PieceColor::Black { 'k' } else { 'K' }),
+                        PieceType::Queen => fen.push(if col.get_color() == PieceColor::Black { 'q' } else { 'Q' }),
+                        PieceType::Bishop => fen.push(if col.get_color() == PieceColor::Black { 'b' } else { 'B' }),
+                        PieceType::Knight => fen.push(if col.get_color() == PieceColor::Black { 'n' } else { 'N' }),
+                    }
+                } else {
+                    space += 1;
+                }
+            }
+            if space != 0 {
+                fen.push_str(space.to_string().as_str());
+            }
+            fen.push('/');
+        }
+
+        fen.pop();
+        fen
     }
-    pub fn get_piece(&self, pos: Position) -> Piece {
-        self.squares[pos[0]][pos[1]]
-    }
+    pub fn get_piece(&self, pos: Position) -> Piece { self.squares[pos[0]][pos[1]] }
     pub fn find_piece(&self, piece_color: PieceColor, piece_type: PieceType) -> Vec<Position> {
         let mut vec = vec![];
         for (y, row) in self.squares.iter().enumerate() {
@@ -95,7 +133,7 @@ impl BoardMap {
     pub fn get_active_color(&self) -> &PieceColor {
         &self.active_color
     }
-    fn set_piece(&mut self, on: Position, value: u32) {
+    pub fn set_piece(&mut self, on: Position, value: u32) {
         self.squares[on[0]][on[1]] = Piece(value);
     }
 
@@ -290,19 +328,22 @@ impl BoardMap {
         };
 
         // piece blocking
-        let is_blocking = self.squares[(from[0] as i32 + shift) as usize][from[1]].is_piece();
-        if !is_blocking {
-            moves.push([(from[0] as i32 + shift) as usize, from[1]]);
-        }
+        let vertical = (from[0] as i32 + shift) as usize;
+        if (0..8).contains(&vertical) {
+            let is_blocking = self.squares[vertical][from[1]].is_piece();
+            if !is_blocking {
+                moves.push([(from[0] as i32 + shift) as usize, from[1]]);
+            }
 
-        // hasn't moved yet
-        let vertical = (from[0] as i32 + shift * 2) as usize;
-        if vertical < 8 {
-            let is_blocking = is_blocking || self.squares[vertical][from[1]].is_piece();
-            if ((piece_from.is_black() && from[0] == 6) || (piece_from.is_white() && from[0] == 1))
-                && !is_blocking
-            {
-                moves.push([vertical, from[1]]);
+            // hasn't moved yet
+            let vertical = (from[0] as i32 + shift * 2) as usize;
+            if (0..8).contains(&vertical) && vertical < 8 {
+                let is_blocking = is_blocking || self.squares[vertical][from[1]].is_piece();
+                if ((piece_from.is_black() && from[0] == 6) || (piece_from.is_white() && from[0] == 1))
+                    && !is_blocking
+                {
+                    moves.push([vertical, from[1]]);
+                }
             }
         }
 
@@ -311,20 +352,22 @@ impl BoardMap {
         // .  p  .
         if (1..8).contains(&from[1]) {
             let to_top_left_pos = [(from[0] as i32 + shift) as usize, from[1] - 1];
-            let to_top_left = self.get_piece(to_top_left_pos);
-            if to_top_left.is_piece() && to_top_left.get_color() != piece_from.get_color() {
-                moves.push(to_top_left_pos);
-            }
+            if to_top_left_pos[0] < 8 {
+                let to_top_left = self.get_piece(to_top_left_pos);
+                if to_top_left.is_piece() && to_top_left.get_color() != piece_from.get_color() {
+                    moves.push(to_top_left_pos);
+                }
 
-            // en passant
-            // x  .  .
-            // _  p  .
-            let to_left = self.squares[from[0]][from[1] - 1];
-            if let Some(PieceType::Pawn(en_passantable)) = to_left.get_type() {
-                if en_passantable && to_left.get_color() != piece_from.get_color() {
-                    // eprintln!("piece on left ({:?}) is en passantable!", [from[0], from[1] - 1]);
-                    let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] - 1];
-                    moves.push(to_en_passant);
+                // en passant
+                // x  .  .
+                // _  p  .
+                let to_left = self.squares[from[0]][from[1] - 1];
+                if let Some(PieceType::Pawn(en_passantable)) = to_left.get_type() {
+                    if en_passantable && to_left.get_color() != piece_from.get_color() {
+                        // eprintln!("piece on left ({:?}) is en passantable!", [from[0], from[1] - 1]);
+                        let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] - 1];
+                        moves.push(to_en_passant);
+                    }
                 }
             }
         }
@@ -334,20 +377,22 @@ impl BoardMap {
         // .  p  .
         if (0..7).contains(&from[1]) {
             let to_top_right_pos = [(from[0] as i32 + shift) as usize, from[1] + 1];
-            let to_top_right = self.squares[to_top_right_pos[0]][to_top_right_pos[1]];
-            if to_top_right.is_piece() && to_top_right.get_color() != piece_from.get_color() {
-                moves.push(to_top_right_pos);
-            }
+            if to_top_right_pos[0] < 8 {
+                let to_top_right = self.squares[to_top_right_pos[0]][to_top_right_pos[1]];
+                if to_top_right.is_piece() && to_top_right.get_color() != piece_from.get_color() {
+                    moves.push(to_top_right_pos);
+                }
 
-            // en passant
-            // .  .  x
-            // .  p  _
-            let to_right = self.squares[from[0]][from[1] + 1];
-            if let Some(PieceType::Pawn(en_passantable)) = to_right.get_type() {
-                if en_passantable && to_right.get_color() != piece_from.get_color() {
-                    // eprintln!("piece on right ({:?}) is en passantable!", [from[0], from[1] + 1]);
-                    let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] + 1];
-                    moves.push(to_en_passant);
+                // en passant
+                // .  .  x
+                // .  p  _
+                let to_right = self.squares[from[0]][from[1] + 1];
+                if let Some(PieceType::Pawn(en_passantable)) = to_right.get_type() {
+                    if en_passantable && to_right.get_color() != piece_from.get_color() {
+                        // eprintln!("piece on right ({:?}) is en passantable!", [from[0], from[1] + 1]);
+                        let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] + 1];
+                        moves.push(to_en_passant);
+                    }
                 }
             }
         }
@@ -406,10 +451,8 @@ impl BoardMap {
                 1
             };
             let to_step = [(to[0] as isize + shift) as usize, to[1]];
-            self.set_piece(to_step, BLACK);
-        }
-
-        if trade {
+            self.set_piece(to_step, 0);
+        } else if trade {
             let color = match self.get_piece(from).get_color() {
                 PieceColor::Black => BLACK,
                 PieceColor::White => WHITE,
@@ -418,14 +461,8 @@ impl BoardMap {
         } else {
             self.set_piece(to, self.get_piece(from).0);
         }
-        self.set_piece(
-            from,
-            if (from[0] + from[1]) % 2 != 0 {
-                BLACK
-            } else {
-                WHITE
-            },
-        );
+
+        self.set_piece(from, 0);
     }
     fn undo_move(&mut self, piece_move: PieceMove, last_piece: u32) {
         let PieceMove { from, to, .. } = piece_move;
@@ -512,6 +549,7 @@ impl Debug for BoardMap {
             writeln!(f, "{} {:?}", 8 - x, self.squares[7 - x]).unwrap();
         }
         writeln!(f, "   a   b   c   d   e   f   g   h").unwrap();
+        writeln!(f, "fen: {}",self.get_fen()).unwrap();
         writeln!(
             f,
             "{}'s turn",

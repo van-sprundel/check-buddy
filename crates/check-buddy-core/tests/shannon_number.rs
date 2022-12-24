@@ -1,5 +1,5 @@
-use check_buddy_core::board::BoardMap;
-use check_buddy_core::piece::piece_move::{PieceMove, Position};
+use check_buddy_core::BoardMap;
+use check_buddy_core::piece_move::{PieceMove, Position};
 
 #[test]
 fn move_integration_test_should_return_valid_move_count_on_depth_one() {

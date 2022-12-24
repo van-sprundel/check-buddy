@@ -5,6 +5,9 @@ edition = "2021"
 
 [dev-dependencies]
 criterion = "0.4"
+calamine = "0.19"
+anyhow = "1"
+thiserror = "1"
 
 [[bench]]
 name = "generate_moves"
