@@ -25,7 +25,7 @@ pub enum PieceType {
 impl Debug for Piece {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let piece = if self.is_black() {
-            match (self.0%32) - BLACK {
+            match (self.0 % 32) - BLACK {
                 PAWN => "BP",
                 KING => "BK",
                 QUEEN => "BQ",
@@ -35,7 +35,7 @@ impl Debug for Piece {
                 _ => "□",
             }
         } else if self.is_white() {
-            match (self.0%32) - WHITE {
+            match (self.0 % 32) - WHITE {
                 PAWN => "WP",
                 KING => "WK",
                 QUEEN => "WQ",

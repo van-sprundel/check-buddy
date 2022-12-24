@@ -1,12 +1,12 @@
+use crate::piece::{piece_type::*, Piece, PieceColor};
 use crate::piece_move::{
     Direction, PieceMove, Position, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
 };
-use crate::piece::{piece_type::*, Piece, PieceColor};
+use anyhow::{anyhow, Result};
 use std::borrow::BorrowMut;
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut};
-use anyhow::{Error, Result, anyhow};
 
 #[derive(Clone, Copy)]
 pub struct BoardMap {
@@ -92,12 +92,36 @@ impl BoardMap {
                     }
 
                     match piece_type {
-                        PieceType::Rook => fen.push(if col.get_color() == PieceColor::Black { 'r' } else { 'R' }),
-                        PieceType::Pawn(_) => fen.push(if col.get_color() == PieceColor::Black { 'p' } else { 'P' }),
-                        PieceType::King => fen.push(if col.get_color() == PieceColor::Black { 'k' } else { 'K' }),
-                        PieceType::Queen => fen.push(if col.get_color() == PieceColor::Black { 'q' } else { 'Q' }),
-                        PieceType::Bishop => fen.push(if col.get_color() == PieceColor::Black { 'b' } else { 'B' }),
-                        PieceType::Knight => fen.push(if col.get_color() == PieceColor::Black { 'n' } else { 'N' }),
+                        PieceType::Rook => fen.push(if col.get_color() == PieceColor::Black {
+                            'r'
+                        } else {
+                            'R'
+                        }),
+                        PieceType::Pawn(_) => fen.push(if col.get_color() == PieceColor::Black {
+                            'p'
+                        } else {
+                            'P'
+                        }),
+                        PieceType::King => fen.push(if col.get_color() == PieceColor::Black {
+                            'k'
+                        } else {
+                            'K'
+                        }),
+                        PieceType::Queen => fen.push(if col.get_color() == PieceColor::Black {
+                            'q'
+                        } else {
+                            'Q'
+                        }),
+                        PieceType::Bishop => fen.push(if col.get_color() == PieceColor::Black {
+                            'b'
+                        } else {
+                            'B'
+                        }),
+                        PieceType::Knight => fen.push(if col.get_color() == PieceColor::Black {
+                            'n'
+                        } else {
+                            'N'
+                        }),
                     }
                 } else {
                     space += 1;
@@ -112,7 +136,9 @@ impl BoardMap {
         fen.pop();
         fen
     }
-    pub fn get_piece(&self, pos: Position) -> Piece { self.squares[pos[0]][pos[1]] }
+    pub fn get_piece(&self, pos: Position) -> Piece {
+        self.squares[pos[0]][pos[1]]
+    }
     pub fn find_piece(&self, piece_color: PieceColor, piece_type: PieceType) -> Vec<Position> {
         let mut vec = vec![];
         for (y, row) in self.squares.iter().enumerate() {
@@ -171,12 +197,12 @@ impl BoardMap {
                 }
 
                 self.switch_active_color();
-                return Ok(());
+                Ok(())
             } else {
-                return Err(anyhow!("Move was invalid"));
+                Err(anyhow!("Move was invalid"))
             }
         } else {
-            return Err(anyhow!("Piece is not yours"));
+            Err(anyhow!("Piece is not yours"))
         }
     }
     /// check if move is valid
@@ -291,7 +317,9 @@ impl BoardMap {
         for (direction, offset) in DIRECTION_OFFSETS.iter().enumerate() {
             let index = from[0] * 8 + from[1];
             let target_index = index as i32 + offset;
-            if !(0..=63).contains(&target_index) || self.len_to_edge(from, Direction::from(direction as usize)) == 0 {
+            if !(0..=63).contains(&target_index)
+                || self.len_to_edge(from, Direction::from(direction as usize)) == 0
+            {
                 continue;
             }
             let target_move = [target_index as usize / 8, target_index as usize % 8];
@@ -333,7 +361,8 @@ impl BoardMap {
             let vertical = (from[0] as i32 + shift * 2) as usize;
             if (0..8).contains(&vertical) && vertical < 8 {
                 let is_blocking = is_blocking || self.squares[vertical][from[1]].is_piece();
-                if ((piece_from.is_black() && from[0] == 6) || (piece_from.is_white() && from[0] == 1))
+                if ((piece_from.is_black() && from[0] == 6)
+                    || (piece_from.is_white() && from[0] == 1))
                     && !is_blocking
                 {
                     moves.push([vertical, from[1]]);
@@ -552,7 +581,7 @@ impl Debug for BoardMap {
                 PieceColor::White => "white",
             }
         )
-            .unwrap();
+        .unwrap();
 
         Ok(())
     }

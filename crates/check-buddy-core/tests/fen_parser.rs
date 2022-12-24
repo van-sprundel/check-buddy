@@ -1,6 +1,8 @@
-use check_buddy_core::{BoardMap, Piece, PieceColor};
-use check_buddy_core::piece_move::{PieceMove, Position};
-use check_buddy_core::piece_type::{BISHOP, BLACK, KING, KNIGHT, PAWN, PieceType, QUEEN, ROOK, WHITE};
+use check_buddy_core::piece_move::{Position};
+use check_buddy_core::piece_type::{
+    BISHOP, BLACK, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE,
+};
+use check_buddy_core::{BoardMap, Piece};
 
 #[test]
 fn fen_to_board() {
@@ -9,7 +11,6 @@ fn fen_to_board() {
     assert_piece(board, [7, 4], KING | BLACK);
     assert_piece(board, [0, 3], KING | WHITE);
 }
-
 
 #[test]
 fn complex_fen_to_board() {
@@ -60,4 +61,3 @@ fn assert_piece(board: BoardMap, pos: Position, piece_value: u32) {
     let piece = board.get_piece(pos);
     assert_eq!(Piece(piece_value), piece);
 }
-

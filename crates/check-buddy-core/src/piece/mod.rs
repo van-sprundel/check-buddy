@@ -3,7 +3,7 @@ pub mod piece_type;
 
 use piece_type::*;
 
-#[derive(Copy, Clone,PartialEq,Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Piece(pub u32);
 
 impl Piece {
