@@ -30,7 +30,7 @@ fn best_move_should_be_valid() {
             let piece = board_map.get_piece(*best_from);
             println! {"{:?}", board_map};
             panic!(
-                "{:?} move {:?} to {:?} isn't seen as a valid move",
+                "{:?} from {:?} to {:?} isn't seen as a valid move",
                 piece, best_from, best_to
             );
         }

@@ -1,7 +1,7 @@
 use check_buddy_core::piece_move::{PieceMove, Position};
 use check_buddy_core::BoardMap;
 
-const SHANNON_TABLE: [usize; 5] = [20, 400, 8902, 197281, 4865609];
+const SHANNON_TABLE: [usize;6] = [20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
 
 #[test]
 fn move_integration_test_should_return_valid_move_count_on_depth_one() {
@@ -12,7 +12,7 @@ fn move_integration_test_should_return_valid_move_count_on_depth_one() {
 #[test]
 fn move_integration_test_should_match_shannon_number() {
     //currently layer 5 takes longer than 60 seconds
-    for depth in 1..=4 {
+    for depth in 1..=5 {
         assert_eq!(
             SHANNON_TABLE[depth - 1],
             move_integration(BoardMap::starting(), depth)

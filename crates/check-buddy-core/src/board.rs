@@ -317,7 +317,8 @@ impl BoardMap {
         for (direction, offset) in DIRECTION_OFFSETS.iter().enumerate() {
             let index = from[0] * 8 + from[1];
             let target_index = index as i32 + offset;
-            if !(0..=63).contains(&target_index)
+            if target_index < 0
+                || target_index > 63
                 || self.len_to_edge(from, Direction::from(direction as usize)) == 0
             {
                 continue;
@@ -351,7 +352,7 @@ impl BoardMap {
 
         // piece blocking
         let vertical = (from[0] as i32 + shift) as usize;
-        if (0..8).contains(&vertical) {
+        if vertical < 8 {
             let is_blocking = self.squares[vertical][from[1]].is_piece();
             if !is_blocking {
                 moves.push([(from[0] as i32 + shift) as usize, from[1]]);
@@ -359,7 +360,7 @@ impl BoardMap {
 
             // hasn't moved yet
             let vertical = (from[0] as i32 + shift * 2) as usize;
-            if (0..8).contains(&vertical) && vertical < 8 {
+            if vertical < 8 {
                 let is_blocking = is_blocking || self.squares[vertical][from[1]].is_piece();
                 if ((piece_from.is_black() && from[0] == 6)
                     || (piece_from.is_white() && from[0] == 1))
@@ -373,7 +374,7 @@ impl BoardMap {
         // takeable pieces on [+1,-1]
         // x  .  .
         // .  p  .
-        if (1..8).contains(&from[1]) {
+        if from[1] > 0 && from[1] < 8 {
             let to_top_left_pos = [(from[0] as i32 + shift) as usize, from[1] - 1];
             if to_top_left_pos[0] < 8 {
                 let to_top_left = self.get_piece(to_top_left_pos);
@@ -398,7 +399,7 @@ impl BoardMap {
         // takeable pieces on [+1,+1]
         // .  .  x
         // .  p  .
-        if (0..7).contains(&from[1]) {
+        if from[1] < 7 {
             let to_top_right_pos = [(from[0] as i32 + shift) as usize, from[1] + 1];
             if to_top_right_pos[0] < 8 {
                 let to_top_right = self.squares[to_top_right_pos[0]][to_top_right_pos[1]];
@@ -423,21 +424,24 @@ impl BoardMap {
     }
     pub fn gen_knight(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
-        let mut moves = vec![];
-        for direction in KNIGHT_DIRECTION_OFFSETS {
-            let new_pos = [direction[0] + from[0] as i32, direction[1] + from[1] as i32];
-            if (0..8).contains(&new_pos[0]) && (0..8).contains(&new_pos[1]) {
-                let to_move = [new_pos[0] as usize, new_pos[1] as usize];
-                let target_piece = self.squares[to_move[0]][to_move[1]];
-                if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
-                    continue;
+        KNIGHT_DIRECTION_OFFSETS
+            .iter()
+            .filter_map(|direction| {
+                let new_pos = [
+                    (direction[0] + from[0] as i32) as usize,
+                    (direction[1] + from[1] as i32) as usize,
+                ];
+                if new_pos[0] < 8 && new_pos[1] < 8 {
+                    let target_piece = self.squares[new_pos[0]][new_pos[1]];
+                    if !(target_piece.is_piece()
+                        && target_piece.get_color() == piece_from.get_color())
+                    {
+                        return Some(new_pos);
+                    }
                 }
-
-                moves.push(to_move);
-            }
-        }
-
-        moves
+                None
+            })
+            .collect()
     }
     fn len_to_edge(&self, pos: Position, direction: Direction) -> usize {
         let (rank, file) = (pos[0], pos[1]);
@@ -492,7 +496,7 @@ impl BoardMap {
         self.set_piece(from, self.get_piece(to).0);
         self.set_piece(to, last_piece);
     }
-    fn gen_opponent_moves(&self) -> Vec<Position> {
+    pub fn gen_opponent_moves(&self) -> Vec<Position> {
         let mut opponent_moves = vec![];
         for rank in 0..8 {
             for file in 0..8 {

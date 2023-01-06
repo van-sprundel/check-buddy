@@ -8,3 +8,7 @@ members = ["crates/*"]
 
 [dependencies]
 check-buddy-core= {path="crates/check-buddy-core"}
+
+[profile.dev]
+opt-level = 2
+lto = "thin"

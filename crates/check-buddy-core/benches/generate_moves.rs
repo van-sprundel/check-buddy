@@ -5,33 +5,27 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 fn generate_moves(c: &mut Criterion) {
     let board = BoardMap::starting();
     let mut group = c.benchmark_group("generate_moves");
-
     group.bench_function("single_move", |b| {
         b.iter(|| board.gen_moves(black_box([0, 0])))
     });
+    group.bench_function("opponent_moves", |b| b.iter(|| board.gen_opponent_moves()));
     group.bench_function("all_moves", |b| {
-        b.iter_with_setup(
-            || {
-                (0..8).flat_map(|rank| {
-                    (0..8)
-                        .map(|file| board.gen_moves(black_box([rank, file])))
-                        .collect::<Vec<_>>()
-                })
-            },
-            |v| v,
-        );
+        b.iter(|| {
+            (0..8).flat_map(|rank| {
+                (0..8)
+                    .map(|file| board.gen_moves(black_box([rank, file])))
+                    .collect::<Vec<_>>()
+            })
+        })
     });
     group.bench_function("all_legal_moves", |b| {
-        b.iter_with_setup(
-            || {
-                (0..8).flat_map(|rank| {
-                    (0..8)
-                        .map(|file| board.gen_legal_moves(black_box([rank, file])))
-                        .collect::<Vec<_>>()
-                })
-            },
-            |v| v,
-        )
+        b.iter(|| {
+            (0..8).flat_map(|rank| {
+                (0..8)
+                    .map(|file| board.gen_legal_moves(black_box([rank, file])))
+                    .collect::<Vec<_>>()
+            })
+        })
     });
     group.finish();
 }
