@@ -1,6 +1,5 @@
 use rand::Rng;
 
-
 use std::fmt::{Debug, Formatter};
 use std::io::BufRead;
 use std::process::exit;

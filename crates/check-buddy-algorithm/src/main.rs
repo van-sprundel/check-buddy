@@ -1,13 +1,13 @@
 #![allow(unused)]
 
-use std::collections::HashMap;
 use check_buddy_core::piece_move::*;
 use check_buddy_core::*;
 use rand::Rng;
+use std::collections::HashMap;
 
 fn main() {
     let mut chess_engine = ChessEngine::new();
-    chess_engine.board = BoardMap::from_fen("8/4kb2/1P5N/3q1rnr/B2Q4/1R5n/Pp2K3/B7 w - - 0 1");
+    chess_engine.board = BoardMap::starting();
 
     println!("{:?}", chess_engine.find_best_move_minimax_ab(0));
     println!("-----");
@@ -26,7 +26,9 @@ impl ChessEngine {
     const MAX: f32 = 1000.;
 
     pub fn new() -> Self {
-        Self { board: BoardMap::starting(), }
+        Self {
+            board: BoardMap::starting(),
+        }
     }
 
     fn ab_max(
@@ -122,7 +124,8 @@ impl ChessEngine {
                 let piece_value = self.board.get_piece(from).0;
                 let mut temp_engine = self.clone();
                 temp_engine.board.move_turn(piece_move);
-                let move_value = temp_engine.ab_max(depth, ChessEngine::MIN, ChessEngine::MAX, true);
+                let move_value =
+                    temp_engine.ab_max(depth, ChessEngine::MIN, ChessEngine::MAX, true);
                 temp_engine.board.undo_move(piece_move, piece_value);
 
                 if move_value == best_value {
@@ -146,7 +149,7 @@ impl ChessEngine {
 
         let mut rand = rand::thread_rng();
         let index = rand.gen_range(0..best_moves.len());
-        return best_moves[index].clone();
+        best_moves[index]
     }
 
     fn find_best_move_negamax(&mut self, depth: usize) -> PieceMove {
@@ -184,6 +187,6 @@ impl ChessEngine {
 
         let mut rand = rand::thread_rng();
         let index = rand.gen_range(0..best_moves.len());
-        return best_moves[index].clone();
+        best_moves[index]
     }
 }

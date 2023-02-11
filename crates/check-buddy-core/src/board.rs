@@ -145,7 +145,7 @@ impl BoardMap {
         println!("{buffer}");
         let non_pawn_move = buffer
             .chars()
-            .nth(0)
+            .next()
             .ok_or(anyhow!("can't parse"))?
             .is_uppercase();
         let mut _buffer_index = if non_pawn_move { 0 } else { 1 };
@@ -380,9 +380,7 @@ impl BoardMap {
         for (direction, offset) in DIRECTION_OFFSETS.iter().enumerate() {
             let index = from[0] * 8 + from[1];
             let target_index = index as i32 + offset;
-            if target_index < 0
-                || target_index > 63
-                || self.len_to_edge(from, Direction::from(direction as usize)) == 0
+            if !(0..=63).contains(&target_index) || self.len_to_edge(from, Direction::from(direction)) == 0
             {
                 continue;
             }
@@ -634,7 +632,7 @@ impl BoardMap {
             for piece in row.iter() {
                 let mut value = piece.0;
                 if value >= 32 {
-                    value = value % 32;
+                    value %= 32;
                 } // en passantable pawns
                 let piece_value = if self.active_color == PieceColor::White && value > WHITE && value < BLACK {
                     value - WHITE
