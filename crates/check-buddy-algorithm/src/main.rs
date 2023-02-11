@@ -7,13 +7,10 @@ use std::collections::HashMap;
 
 fn main() {
     let mut chess_engine = ChessEngine::new();
-    chess_engine.board = BoardMap::starting();
 
     println!("{:?}", chess_engine.find_best_move_minimax_ab(0));
     println!("-----");
-    println!("{:?}", chess_engine.find_best_move_minimax_ab(1));
-    println!("-----");
-    // println!("{:?}", chess_engine.find_best_move_minimax_ab(6));
+    println!("{:?}", chess_engine.find_best_move_minimax_ab(5));
 }
 
 #[derive(Clone)]
