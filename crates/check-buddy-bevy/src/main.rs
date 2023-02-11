@@ -7,7 +7,7 @@ fn main() {
         title: "Chess".to_string(),
         width: 400.,
         height: 400.,
-        ..Default::default()
+        ..default()
     });
     app.add_plugins(DefaultPlugins);
     app.add_plugin(BoardPlugin);

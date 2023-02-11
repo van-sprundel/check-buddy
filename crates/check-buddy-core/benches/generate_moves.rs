@@ -8,7 +8,7 @@ fn generate_moves(c: &mut Criterion) {
     group.bench_function("single_move", |b| {
         b.iter(|| board.gen_moves(black_box([0, 0])))
     });
-    group.bench_function("opponent_moves", |b| b.iter(|| board.gen_opponent_moves()));
+    group.bench_function("opponent_moves", |b| b.iter(|| board.gen_all_opponent_positions()));
     group.bench_function("all_moves", |b| {
         b.iter(|| {
             (0..8).flat_map(|rank| {

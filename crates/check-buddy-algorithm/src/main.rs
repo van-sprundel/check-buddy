@@ -1,30 +1,24 @@
 #![allow(unused)]
 
+use std::collections::HashMap;
 use check_buddy_core::piece_move::*;
 use check_buddy_core::*;
 use rand::Rng;
 
 fn main() {
     let mut chess_engine = ChessEngine::new();
-    // println!("{}", chess_engine.mini(, 3));
-    // println!("{}", chess_engine.maxi(, 3));
-    println!("{:?}", chess_engine.find_best_move(0));
+    chess_engine.board = BoardMap::from_fen("8/4kb2/1P5N/3q1rnr/B2Q4/1R5n/Pp2K3/B7 w - - 0 1");
+
+    println!("{:?}", chess_engine.find_best_move_minimax_ab(0));
+    println!("-----");
+    println!("{:?}", chess_engine.find_best_move_minimax_ab(1));
+    println!("-----");
+    // println!("{:?}", chess_engine.find_best_move_minimax_ab(6));
 }
-
-// const BLACK: usize = 8;
-// const WHITE: usize = 16;
-
-// const PAWN: usize = 1;
-// const BISHOP: usize = 2;
-// const KNIGHT: usize = 3;
-// const ROOK: usize = 4;
-// const QUEEN: usize = 5;
-// const KING: usize = 6;
 
 #[derive(Clone)]
 struct ChessEngine {
     board: BoardMap,
-    moves: Vec<PieceMove>,
 }
 
 impl ChessEngine {
@@ -32,66 +26,78 @@ impl ChessEngine {
     const MAX: f32 = 1000.;
 
     pub fn new() -> Self {
-        Self {
-            board: BoardMap::starting(),
-            moves: vec![],
-        }
+        Self { board: BoardMap::starting(), }
     }
 
-    fn maxi(&self, moves: &Vec<PieceMove>, depth: usize) -> f32 {
-        if depth == 0 {
-            return self.evaluate();
-        }
-
-        let mut max = Self::MAX;
-        for piece_move in moves.iter() {
-            let score = self.mini(moves, depth - 1);
-            if score > max {
-                max = score;
+    fn ab_max(
+        &self,
+        depth: usize,
+        mut alpha: f32,
+        mut beta: f32,
+        mut is_maximizing_player: bool,
+    ) -> f32 {
+        return if is_maximizing_player {
+            // AB MAX
+            if depth == 0 {
+                return self.evaluate();
             }
-        }
-        max
-    }
+            let moves = self.board.gen_all_legal_moves();
 
-    fn mini(&self, moves: &Vec<PieceMove>, depth: usize) -> f32 {
-        if depth == 0 {
-            return -self.evaluate();
-        }
+            for piece_move in moves.iter() {
+                let mut temp_engine = self.clone(); //TODO find cheaper way
+                temp_engine.board.move_turn(*piece_move);
 
-        let mut min = Self::MIN;
-        for piece_move in moves.iter() {
-            let score = self.maxi(moves, depth - 1);
-            if score < min {
-                min = score;
+                let score = temp_engine.ab_max(depth - 1, alpha, beta, !is_maximizing_player);
+                if score >= beta {
+                    return beta;
+                }
+                if score > alpha {
+                    alpha = score;
+                }
             }
-        }
-        min
+            alpha
+        } else {
+            // AB MIN
+            if depth == 0 {
+                return -self.evaluate();
+            }
+            let moves = self.board.gen_all_legal_moves();
+
+            for piece_move in moves.iter() {
+                let mut temp_engine = self.clone(); //TODO find cheaper way
+                temp_engine.board.move_turn(*piece_move);
+
+                let score = temp_engine.ab_max(depth - 1, alpha, beta, !is_maximizing_player);
+                if score <= alpha {
+                    return alpha;
+                }
+                if score < beta {
+                    beta = score;
+                }
+            }
+            beta
+        };
     }
 
-    fn nega_max(&mut self, from: Position, depth: usize) -> f32 {
+    fn nega_max(&mut self, depth: usize) -> f32 {
         if depth == 0 {
             return self.evaluate();
         }
         let mut max = Self::MIN;
-        // let moves = if self.board.get_active_color() == &PieceColor::Black {
-        //     self.board.gen_opponent_moves()
-        // } else {
-        //     self.board.gen_all_legal_moves()
-        // };
         let moves = self.board.gen_all_legal_moves();
-        for to in moves.iter() {
-            let piece_move = PieceMove::new(from, *to);
-            // MAKE MOVE
-            let mut temp_engine = self.clone(); //TODO find cheaper way
-            temp_engine.board.move_turn(piece_move);
 
-            let value = -temp_engine.nega_max(from, depth - 1);
+        for piece_move in moves.iter() {
+            let mut temp_engine = self.clone(); //TODO find cheaper way
+            temp_engine.board.move_turn(*piece_move);
+
+            let value = -temp_engine.nega_max(depth - 1);
             if value > max {
                 max = value;
             }
         }
         max
     }
+
     /// score = materialWeight * (numWhitePieces - numBlackPieces) * who2move
     fn evaluate(&self) -> f32 {
         let material_weight = self.board.get_material_weight() as f32;
@@ -106,7 +112,7 @@ impl ChessEngine {
         material_weight * (num_white_pieces - num_black_pieces) * who2move
     }
 
-    fn find_best_move(&mut self, depth: usize) -> PieceMove {
+    fn find_best_move_minimax_ab(&mut self, depth: usize) -> PieceMove {
         let mut best_value = Self::MIN;
         let mut best_moves = vec![];
         for from in self.board.get_active_pieces() {
@@ -116,7 +122,7 @@ impl ChessEngine {
                 let piece_value = self.board.get_piece(from).0;
                 let mut temp_engine = self.clone();
                 temp_engine.board.move_turn(piece_move);
-                let move_value = temp_engine.nega_max(from, depth);
+                let move_value = temp_engine.ab_max(depth, ChessEngine::MIN, ChessEngine::MAX, true);
                 temp_engine.board.undo_move(piece_move, piece_value);
 
                 if move_value == best_value {
@@ -134,7 +140,44 @@ impl ChessEngine {
             "possible moves are {:?}",
             best_moves
                 .iter()
-                .take(5)
+                .map(|x| format!("{:?} to {:?}", x.from, x.to))
+                .collect::<Vec<_>>()
+        );
+
+        let mut rand = rand::thread_rng();
+        let index = rand.gen_range(0..best_moves.len());
+        return best_moves[index].clone();
+    }
+
+    fn find_best_move_negamax(&mut self, depth: usize) -> PieceMove {
+        let mut best_value = Self::MIN;
+        let mut best_moves = vec![];
+        for from in self.board.get_active_pieces() {
+            let moves = self.board.gen_legal_moves(from);
+            for to in moves {
+                let piece_move = PieceMove::new(from, to);
+                let piece_value = self.board.get_piece(from).0;
+                let mut temp_engine = self.clone();
+                temp_engine.board.move_turn(piece_move);
+                let move_value = temp_engine.nega_max(depth);
+                temp_engine.board.undo_move(piece_move, piece_value);
+
+                if move_value == best_value {
+                    best_moves.push(piece_move);
+                } else if move_value > best_value {
+                    best_value = move_value;
+                    best_moves.clear();
+                    best_moves.push(piece_move);
+                }
+            }
+        }
+
+        println!("best move value is {}", best_value);
+        println!(
+            "possible moves are {:?}",
+            best_moves
+                .iter()
+                .take(10)
                 .map(|x| format!("{:?} to {:?}", x.from, x.to))
                 .collect::<Vec<_>>()
         );
