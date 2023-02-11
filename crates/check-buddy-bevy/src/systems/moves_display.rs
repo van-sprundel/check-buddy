@@ -23,23 +23,20 @@ pub fn show_moves(
             state.set(MoveState::Clicked).unwrap();
         }
         info!("Showing moves");
+
+        let mut sprite_bundle = SpriteBundle::default();
+        sprite_bundle.transform =
+            Transform::from_xyz(window.width() / 2., window.height() / 2., 2.);
         commands
-            .spawn()
-            .insert(Name::new("Move overlay"))
-            .insert_bundle(SpriteBundle::default())
-            .insert(Transform::from_xyz(
-                window.width() / 2.,
-                window.height() / 2.,
-                2.,
-            ))
+            .spawn((Name::new("Move overlay"), sprite_bundle))
             .with_children(|parent| {
                 let moves = board_map.board_map.gen_legal_positions(ev.0);
                 for position in moves.iter() {
-                    parent.spawn_bundle(SpriteBundle {
+                    parent.spawn(SpriteBundle {
                         sprite: Sprite {
                             custom_size: Some(Vec2::splat(board_options.tile_size)),
                             color: board_options.move_color,
-                            ..Default::default()
+                            ..default()
                         },
                         transform: Transform::from_xyz(
                             -(board_options.tile_size * 8.)
@@ -50,41 +47,35 @@ pub fn show_moves(
                                 + (board_options.tile_size / 2.),
                             2.,
                         ),
-                        ..Default::default()
+                        ..default()
                     });
                 }
             })
             .insert(MoveOverlay);
-        commands
-            .spawn()
-            .insert(Transform::from_xyz(
-                window.width() / 2.,
-                window.height() / 2.,
-                2.,
-            ))
-            .insert(GlobalTransform::default())
-            .insert_bundle(SpriteBundle {
-                sprite: Sprite {
-                    custom_size: Some(Vec2::splat(board_options.tile_size)),
-                    color: if (ev.0[0] + ev.0[1]) % 2 != 0 {
-                        board_options.tile_color_black
-                    } else {
-                        board_options.tile_color_white
-                    },
-                    ..Default::default()
+
+        let sprite_bundle = SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::splat(board_options.tile_size)),
+                color: if (ev.0[0] + ev.0[1]) % 2 != 0 {
+                    board_options.tile_color_black
+                } else {
+                    board_options.tile_color_white
                 },
-                transform: Transform::from_xyz(
-                    -200.
-                        + (board_options.tile_size * (ev.0[1] as f32))
-                        + (board_options.tile_size / 2.),
-                    -200.
-                        + (board_options.tile_size * (ev.0[0] as f32))
-                        + (board_options.tile_size / 2.),
-                    2.,
-                ),
-                ..Default::default()
-            })
-            .insert(MoveOverlay);
+                ..default()
+            },
+            transform: Transform::from_xyz(
+                -200.
+                    + (board_options.tile_size * (ev.0[1] as f32))
+                    + (board_options.tile_size / 2.),
+                -200.
+                    + (board_options.tile_size * (ev.0[0] as f32))
+                    + (board_options.tile_size / 2.),
+                2.,
+            ),
+            ..default()
+        };
+        // sprite_bundle.transform = Transform::from_xyz(window.width() /4., window.height() / 4., 2.);
+        commands.spawn(sprite_bundle).insert(MoveOverlay);
     }
 }
 
@@ -122,7 +113,7 @@ pub fn spawn_piece_to_cursor(
         let piece = board_map.board_map.get_piece(selected_position);
 
         commands
-            .spawn_bundle(SpriteBundle {
+            .spawn(SpriteBundle {
                 sprite: Sprite {
                     custom_size: Some(Vec2::splat(board_options.tile_size)),
                     ..Default::default()

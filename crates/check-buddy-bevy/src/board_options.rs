@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+#[derive(Resource)]
 pub struct BoardOptions {
     pub tile_color_white: Color,
     pub tile_color_black: Color,

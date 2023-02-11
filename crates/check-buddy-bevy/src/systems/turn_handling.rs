@@ -1,6 +1,6 @@
 use crate::board_options::BoardOptions;
 use bevy::prelude::*;
-use check_buddy_core::{ChessEngine, PieceColor};
+use check_buddy_core::PieceColor;
 
 use crate::board_plugin::Board;
 use crate::events::OpponentTurnEvent;
@@ -11,11 +11,11 @@ pub fn turn_handle_system(
     board_options: Res<BoardOptions>,
     mut commands: Commands,
     mut board: ResMut<Board>,
-    mut engine: ResMut<ChessEngine>,
     mut opponent_turn_evr: EventReader<OpponentTurnEvent>,
 ) {
     for _ev in opponent_turn_evr.iter() {
-        let best_move = engine.find_best_move_minimax_ab(board.board_map, 3);
+        let temp_board = board.board_map.clone();
+        let best_move = board.chess_engine.find_best_move_minimax_ab(temp_board, 3);
         if board.pieces.get(&best_move.from).is_none() {
             panic!("{:?} doesn't contain a piece!", best_move.from);
         }

@@ -539,7 +539,7 @@ impl BoardMap {
                 1
             };
             let to_step = [(to[0] as isize + shift) as usize, to[1]];
-            if to_step[0] != 0 && to_step[1] != 0 && shift != -1 {
+            if to_step[0] != 0 && to_step[1] != 0 && shift != -1 && to_step[0] != 8 {
                 self.set_piece(to_step, 0);
             }
         } else if trade {
