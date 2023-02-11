@@ -14,7 +14,7 @@ fn best_move_should_be_valid() {
                 (0..8)
                     .flat_map(|y| {
                         board_map
-                            .gen_legal_moves([x, y])
+                            .gen_legal_positions([x, y])
                             .iter()
                             .map(|i| ([x, y], *i))
                             .collect::<Vec<_>>()

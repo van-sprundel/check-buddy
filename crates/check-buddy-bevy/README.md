@@ -9,17 +9,9 @@
 
 ![](crates/check-buddy-bevy/assets/footage.gif)
 
-# ✔️ Currently implemented
-- [x] all pieces rules
-- [x] move check
-- [x] next move check
-- [x] illegal moves
-- [x] en passant
-- [ ] pawn trade
-- [ ] win check
-- [ ] fem string
-  - [x] from
-  - [ ] to
+Currently, the Bevy implementation is flawed. Pieces do not update correctly. It'd be better if pieces updated with every move.
+
+If you feel like implementing something like this, (Whether that's in Bevy, Macroquad, WGPU, etc.) feel free!
 
 # ⚙️Running
 

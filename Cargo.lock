@@ -1043,6 +1043,7 @@ dependencies = [
  "calamine",
  "criterion",
  "csv",
+ "rand 0.8.5",
  "thiserror",
 ]
 
@@ -1072,14 +1073,6 @@ dependencies = [
  "web-sys",
  "wgpu 0.14.2",
  "winit 0.27.5",
-]
-
-[[package]]
-name = "chess-neural-network"
-version = "0.1.0"
-dependencies = [
- "check-buddy-core",
- "rand 0.8.5",
 ]
 
 [[package]]

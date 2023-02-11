@@ -2,8 +2,8 @@ use anyhow::{anyhow, Error, Result};
 use calamine::*;
 use check_buddy_core::piece_move::{PieceMove, Position};
 use check_buddy_core::BoardMap;
-use std::ops::Sub;
 use csv::StringRecord;
+use std::ops::Sub;
 
 #[test]
 fn opening_move_should_be_valid() {
@@ -18,7 +18,7 @@ fn opening_move_should_be_valid() {
                     (0..8)
                         .flat_map(|y| {
                             board
-                                .gen_legal_moves([x, y])
+                                .gen_legal_positions([x, y])
                                 .iter()
                                 .map(|i| ([x, y], *i))
                                 .collect::<Vec<_>>()
@@ -44,13 +44,11 @@ fn opening_move_should_be_valid() {
 }
 
 fn gen_move_data() -> Result<Vec<(Vec<String>, String)>> {
-    let path = format!(
-        "{}/tests/datasets/games.csv",
-        env!("CARGO_MANIFEST_DIR")
-    );
+    let path = format!("{}/tests/datasets/games.csv", env!("CARGO_MANIFEST_DIR"));
     let file = std::fs::File::open(path)?;
     let mut rdr = csv::Reader::from_reader(file);
-    Ok(rdr.records()
+    Ok(rdr
+        .records()
         .map(|result| {
             let record = result.expect("couldn't parse record");
             let moves = &record[12];

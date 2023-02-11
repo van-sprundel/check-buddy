@@ -33,7 +33,7 @@ pub fn show_moves(
                 2.,
             ))
             .with_children(|parent| {
-                let moves = board_map.board_map.gen_legal_moves(ev.0);
+                let moves = board_map.board_map.gen_legal_positions(ev.0);
                 for position in moves.iter() {
                     parent.spawn_bundle(SpriteBundle {
                         sprite: Sprite {

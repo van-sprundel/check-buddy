@@ -212,7 +212,6 @@ impl BoardMap {
     }
     pub fn get_active_pieces(&self) -> Vec<Position> {
         let mut pieces = vec![];
-
         for (i, row) in self.squares.iter().enumerate() {
             for (j, piece) in row.iter().enumerate() {
                 if piece.get_color() == *self.get_active_color() {
@@ -275,7 +274,7 @@ impl BoardMap {
         let piece_to = self.squares[to[0]][to[1]];
 
         if !piece_to.is_piece() || piece_to.get_color() != self.active_color {
-            let moves = self.gen_legal_moves(from);
+            let moves = self.gen_legal_positions(from);
             return moves.contains(&to);
         }
         false
@@ -284,8 +283,8 @@ impl BoardMap {
         let piece_on = self.get_piece(pos);
         piece_on.is_piece() && piece_on.get_color() != self.active_color
     }
-    /// generate only legal moves for piece
-    pub fn gen_legal_moves(&self, from: Position) -> Vec<Position> {
+    /// generate only legal move positions for piece
+    pub fn gen_legal_positions(&self, from: Position) -> Vec<Position> {
         let mut temp_board = *self;
         let moves = temp_board.gen_moves(from);
         let mut legal_moves = vec![];
@@ -380,7 +379,8 @@ impl BoardMap {
         for (direction, offset) in DIRECTION_OFFSETS.iter().enumerate() {
             let index = from[0] * 8 + from[1];
             let target_index = index as i32 + offset;
-            if !(0..=63).contains(&target_index) || self.len_to_edge(from, Direction::from(direction)) == 0
+            if !(0..=63).contains(&target_index)
+                || self.len_to_edge(from, Direction::from(direction)) == 0
             {
                 continue;
             }
@@ -567,8 +567,11 @@ impl BoardMap {
                 let piece = self.squares[rank][file];
                 if piece.is_piece() && piece.get_color() == self.active_color {
                     let from_move = [rank, file];
-                    let to_moves = self.gen_legal_moves([rank, file]);
-                    let moves = to_moves.iter().map(|&to| PieceMove::new(from_move, to)).collect::<Vec<_>>();
+                    let to_moves = self.gen_legal_positions([rank, file]);
+                    let moves = to_moves
+                        .iter()
+                        .map(|&to| PieceMove::new(from_move, to))
+                        .collect::<Vec<_>>();
                     legal_moves.extend(moves);
                 }
             }
@@ -634,13 +637,14 @@ impl BoardMap {
                 if value >= 32 {
                     value %= 32;
                 } // en passantable pawns
-                let piece_value = if self.active_color == PieceColor::White && value > WHITE && value < BLACK {
-                    value - WHITE
-                } else if self.active_color == PieceColor::Black && value > BLACK {
-                    value - BLACK
-                } else {
-                    continue;
-                };
+                let piece_value =
+                    if self.active_color == PieceColor::White && value > WHITE && value < BLACK {
+                        value - WHITE
+                    } else if self.active_color == PieceColor::Black && value > BLACK {
+                        value - BLACK
+                    } else {
+                        continue;
+                    };
 
                 let mut piece_weight = match piece_value {
                     PAWN => 1,
@@ -709,7 +713,7 @@ impl Debug for BoardMap {
                 PieceColor::White => "white",
             }
         )
-            .unwrap();
+        .unwrap();
 
         Ok(())
     }

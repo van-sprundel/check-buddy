@@ -1,7 +1,7 @@
 use check_buddy_core::piece_move::{PieceMove, Position};
 use check_buddy_core::BoardMap;
 
-const SHANNON_TABLE: [usize;6] = [20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
+const SHANNON_TABLE: [usize; 6] = [20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
 
 #[test]
 fn move_integration_test_should_return_valid_move_count_on_depth_one() {
@@ -30,7 +30,7 @@ fn move_integration(board_map: BoardMap, depth: usize) -> usize {
             (0..8)
                 .flat_map(|y| {
                     board_map
-                        .gen_legal_moves([x, y])
+                        .gen_legal_positions([x, y])
                         .iter()
                         .map(|i| ([x, y], *i))
                         .collect::<Vec<(Position, Position)>>()
