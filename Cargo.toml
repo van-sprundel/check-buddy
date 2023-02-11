@@ -7,7 +7,7 @@ edition = "2021"
 members = ["crates/*"]
 
 [dependencies]
-check-buddy-core= {path="crates/check-buddy-core"}
+check-buddy-core = {path="crates/check-buddy-core"}
 
 [profile.dev]
 opt-level = 2

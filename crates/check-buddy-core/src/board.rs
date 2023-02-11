@@ -6,7 +6,7 @@ use anyhow::{anyhow, Result};
 use std::borrow::BorrowMut;
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
-use std::ops::{Deref, DerefMut};
+use std::ops::{Deref, DerefMut, Sub};
 
 #[derive(Clone, Copy)]
 pub struct BoardMap {
@@ -136,6 +136,58 @@ impl BoardMap {
         fen.pop();
         fen
     }
+    pub fn parse_move(&self, buffer: &String) -> Result<PieceMove> {
+        let buffer = buffer
+            .chars()
+            .skip(buffer.len() - 2)
+            .take(2)
+            .collect::<String>(); //TODO hacky, fix
+        println!("{buffer}");
+        let non_pawn_move = buffer
+            .chars()
+            .nth(0)
+            .ok_or(anyhow!("can't parse"))?
+            .is_uppercase();
+        let mut _buffer_index = if non_pawn_move { 0 } else { 1 };
+        let mut move_data = buffer.chars().collect::<Vec<_>>();
+        move_data.reverse();
+
+        let piece_type = if non_pawn_move {
+            match move_data.pop().ok_or(anyhow!("can't parse"))? {
+                'B' => PieceType::Bishop,
+                'N' => PieceType::Knight,
+                'K' => PieceType::King,
+                'R' => PieceType::Rook,
+                'Q' => PieceType::Queen,
+                _ => return Err(anyhow!("can't parse")),
+            }
+        } else {
+            //TODO check for piece on position and update
+            PieceType::Pawn(false)
+        };
+
+        let positions = self.find_piece(*self.get_active_color(), piece_type);
+        for from_position in positions {
+            let mut move_data = move_data.clone();
+
+            let rank = (move_data.pop().ok_or(anyhow!("can't parse"))? as usize).sub(97);
+
+            let file = move_data
+                .pop()
+                .ok_or(anyhow!("can't parse"))?
+                .to_string()
+                .parse::<usize>()?
+                .sub(1);
+
+            let piece_move = PieceMove::new(from_position, [file, rank]);
+
+            if self.is_valid_move(piece_move) {
+                return Ok(piece_move);
+            }
+        }
+
+        return Err(anyhow!("{:?} is not a valid move", move_data));
+    }
     pub fn get_piece(&self, pos: Position) -> Piece {
         self.squares[pos[0]][pos[1]]
     }
@@ -157,6 +209,18 @@ impl BoardMap {
     }
     pub fn get_active_color(&self) -> &PieceColor {
         &self.active_color
+    }
+    pub fn get_active_pieces(&self) -> Vec<Position> {
+        let mut pieces = vec![];
+
+        for (i, row) in self.squares.iter().enumerate() {
+            for (j, piece) in row.iter().enumerate() {
+                if piece.get_color() == *self.get_active_color() {
+                    pieces.push([i, j]);
+                }
+            }
+        }
+        pieces
     }
     pub fn set_piece(&mut self, on: Position, value: u32) {
         self.squares[on[0]][on[1]] = Piece(value);
@@ -462,7 +526,7 @@ impl BoardMap {
         }
     }
     /// make a move (without check)
-    fn make_move(&mut self, piece_move: PieceMove) {
+    pub fn make_move(&mut self, piece_move: PieceMove) {
         let PieceMove {
             from,
             to,
@@ -491,10 +555,23 @@ impl BoardMap {
 
         self.set_piece(from, 0);
     }
-    fn undo_move(&mut self, piece_move: PieceMove, last_piece: u32) {
+    pub fn undo_move(&mut self, piece_move: PieceMove, last_piece: u32) {
         let PieceMove { from, to, .. } = piece_move;
         self.set_piece(from, self.get_piece(to).0);
         self.set_piece(to, last_piece);
+    }
+    pub fn gen_all_legal_moves(&self) -> Vec<Position> {
+        let mut legal_moves = vec![];
+        for rank in 0..8 {
+            for file in 0..8 {
+                let piece = self.squares[rank][file];
+                if piece.is_piece() && piece.get_color() == self.active_color {
+                    let moves = self.gen_legal_moves([rank, file]);
+                    legal_moves.extend(moves);
+                }
+            }
+        }
+        legal_moves
     }
     pub fn gen_opponent_moves(&self) -> Vec<Position> {
         let mut opponent_moves = vec![];
@@ -567,6 +644,47 @@ impl BoardMap {
         }
 
         false
+    }
+    pub fn get_material_weight(&self) -> i32 {
+        let mut res = 0;
+        for row in self.squares.iter() {
+            for piece in row.iter() {
+                let mut value = piece.0;
+                if value >= 32 {
+                    value = value % 32;
+                } // en passantable pawns
+                let piece_value =
+                    if self.active_color == PieceColor::White && value > WHITE && value < BLACK {
+                        value - WHITE
+                    } else if self.active_color == PieceColor::Black && value > BLACK {
+                        value - BLACK
+                    } else {
+                        continue;
+                    };
+                res += match piece_value {
+                    PAWN => 1,
+                    KNIGHT | BISHOP => 3,
+                    ROOK => 5,
+                    QUEEN => 8,
+                    KING => 0,
+                    _ => unimplemented!("{} is not a valid piece value", piece.0),
+                }
+            }
+        }
+        res
+    }
+    pub fn get_num_white_pieces(&self) -> i32 {
+        self.squares.iter().fold(0, |res, row| {
+            res + row
+                .iter()
+                .filter(|&&item| item.0 > WHITE && item.0 < BLACK)
+                .count()
+        }) as i32
+    }
+    pub fn get_num_black_pieces(&self) -> i32 {
+        self.squares.iter().fold(0, |res, row| {
+            res + row.iter().filter(|&&item| item.0 > BLACK).count()
+        }) as i32
     }
 }
 

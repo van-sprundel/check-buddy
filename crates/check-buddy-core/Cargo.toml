@@ -10,6 +10,7 @@ thiserror = "1"
 [dev-dependencies]
 criterion = "0.4"
 calamine = "0.19"
+csv = "1.1"
 
 [[bench]]
 name = "generate_moves"
