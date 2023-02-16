@@ -2,10 +2,10 @@ use crate::board_options::BoardOptions;
 use bevy::app::App;
 use bevy::prelude::*;
 use check_buddy_core::piece_move::Position;
-use check_buddy_core::BoardMap;
+use check_buddy_core::{BoardMap, ChessEngine};
 use std::collections::HashMap;
 
-use crate::events::{PieceClickedEvent, PieceReleasedEvent};
+use crate::events::{OpponentTurnEvent, PieceClickedEvent, PieceReleasedEvent};
 
 use crate::systems;
 use crate::systems::moves_display::{
@@ -16,10 +16,11 @@ pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(BoardOptions::default())
-            .insert_resource(Board::default())
+        app.init_resource::<BoardOptions>()
+            .init_resource::<Board>()
             .add_event::<PieceClickedEvent>()
             .add_event::<PieceReleasedEvent>()
+            .add_event::<OpponentTurnEvent>()
             .add_state(MoveState::Released)
             .add_system_set(
                 SystemSet::on_enter(MoveState::Clicked).with_system(spawn_piece_to_cursor),
@@ -32,12 +33,15 @@ impl Plugin for BoardPlugin {
             .add_system(show_moves)
             .add_system(hide_moves)
             .add_system(systems::input_handling::input_handle_system)
-            .add_system(systems::move_handling::move_system);
+            .add_system(systems::move_handling::move_system)
+            .add_system(systems::turn_handling::turn_handle_system);
     }
 }
 
+#[derive(Resource)]
 pub struct Board {
     pub board_map: BoardMap,
+    pub chess_engine: ChessEngine,
     pub pieces: HashMap<Position, Entity>,
     pub(crate) selected_square: Option<Position>,
 }
@@ -46,6 +50,7 @@ impl Default for Board {
     fn default() -> Self {
         Self {
             board_map: BoardMap::starting(),
+            chess_engine: ChessEngine::default(),
             pieces: HashMap::with_capacity(64),
             selected_square: None,
         }
@@ -74,15 +79,10 @@ pub fn spawn_board(
     asset_server: Res<AssetServer>,
 ) {
     let window = windows.primary();
+    let mut sprite_bundle = SpriteBundle::default();
+    sprite_bundle.transform = Transform::from_xyz(window.width() / 2., window.height() / 2., 0.);
     commands
-        .spawn()
-        .insert(Name::new("Board"))
-        .insert_bundle(SpriteBundle::default())
-        .insert(Transform::from_xyz(
-            window.width() / 2.,
-            window.height() / 2.,
-            0.,
-        ))
+        .spawn((Name::new("Board"), sprite_bundle))
         .with_children(|parent| {
             (0..64).for_each(|i| {
                 let (x, y) = (i / 8, i % 8);
@@ -92,7 +92,7 @@ pub fn spawn_board(
                     0.,
                 );
                 // tile
-                parent.spawn_bundle(SpriteBundle {
+                parent.spawn(SpriteBundle {
                     sprite: Sprite {
                         color: if (x + y) % 2 == 0 {
                             board_options.tile_color_white
@@ -100,10 +100,10 @@ pub fn spawn_board(
                             board_options.tile_color_black
                         },
                         custom_size: Some(Vec2::splat(board_options.tile_size)),
-                        ..Default::default()
+                        ..default()
                     },
                     transform: pos,
-                    ..Default::default()
+                    ..default()
                 });
                 // piece
                 let position = [7 - y, 7 - x];
@@ -111,7 +111,7 @@ pub fn spawn_board(
 
                 if let Some(path) = piece.get_icon() {
                     let entity = parent
-                        .spawn_bundle(SpriteBundle {
+                        .spawn(SpriteBundle {
                             sprite: Sprite {
                                 custom_size: Some(Vec2::splat(board_options.tile_size)),
                                 ..Default::default()

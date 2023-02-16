@@ -1,6 +1,6 @@
 use crate::board_options::BoardOptions;
 use crate::board_plugin::Board;
-use crate::events::{PieceClickedEvent, PieceReleasedEvent};
+use crate::events::{OpponentTurnEvent, PieceClickedEvent, PieceReleasedEvent};
 use bevy::prelude::*;
 use check_buddy_core::piece_move::PieceMove;
 use check_buddy_core::PieceColor;
@@ -13,6 +13,7 @@ pub fn move_system(
     mut board: ResMut<Board>,
     mut piece_clicked_evr: EventReader<PieceClickedEvent>,
     mut piece_released_evr: EventReader<PieceReleasedEvent>,
+    mut turn_evw: EventWriter<OpponentTurnEvent>,
 ) {
     for ev in piece_clicked_evr.iter() {
         board.selected_square = Some(ev.0);
@@ -66,6 +67,9 @@ pub fn move_system(
                     if let Some(p) = board.pieces.remove(&old_pos) {
                         board.pieces.insert(new_pos, p);
                     }
+
+                    turn_evw.send(OpponentTurnEvent);
+
                     let move_sound = asset_server.load("se/move_sound.wav");
                     let hit_sound = asset_server.load("se/hit_sound.wav");
                     audio.play_with_settings(
