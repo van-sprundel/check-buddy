@@ -23,7 +23,7 @@ impl Plugin for BoardPlugin {
             .add_event::<OpponentTurnEvent>()
             .add_state(MoveState::Released)
             .add_system_set(
-                SystemSet::on_enter(MoveState::Clicked).with_system(spawn_piece_to_cursor),
+                SystemSet::on_update(MoveState::Clicked).with_system(spawn_piece_to_cursor),
             )
             .add_system_set(SystemSet::on_update(MoveState::Clicked).with_system(piece_to_cursor))
             .add_system_set(

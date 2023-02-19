@@ -628,7 +628,16 @@ impl BoardMap {
 
         false
     }
-
+    // f(p) = 200(K-K')
+    //        + 9(Q-Q')
+    //        + 5(R-R')
+    //        + 3(B-B' + N-N')
+    //        + 1(P-P')
+    //        - 0.5(D-D' + S-S' + I-I')
+    //        + 0.1(M-M') + ...
+    // KQRBNP = number of kings, queens, rooks, bishops, knights and pawns
+    //  D,S,I = doubled, blocked and isolated pawns
+    //  M = Mobility (the number of legal moves)
     pub fn get_material_weight(&self) -> i32 {
         let mut res = 0;
         for row in self.squares.iter() {
@@ -650,8 +659,8 @@ impl BoardMap {
                     PAWN => 1,
                     KNIGHT | BISHOP => 3,
                     ROOK => 5,
-                    QUEEN => 8,
-                    KING => 0,
+                    QUEEN => 9,
+                    KING => 200,
                     _ => unimplemented!("{} is not a valid piece value", piece.0),
                 };
                 if self.active_color != piece.get_color() {

@@ -105,7 +105,15 @@ pub fn spawn_piece_to_cursor(
     board_options: Res<BoardOptions>,
     board_map: Res<Board>,
     mut commands: Commands,
+    piece_exists_query: Query<&CursorPiece>,
 ) {
+    //TODO
+    // right now using on_update instead of on_enter because of system ordering
+    // instead use system ordering
+    if !piece_exists_query.is_empty() {
+        return;
+    }
+
     let window = windows.primary_mut();
     window.set_cursor_visibility(false);
     if let Some(selected_position) = board_map.selected_square {
@@ -137,13 +145,11 @@ pub fn piece_to_cursor(windows: Res<Windows>, mut query: Query<&mut Transform, W
     let window = windows.primary();
     for mut cursor_piece in query.iter_mut() {
         if let Some(position) = window.cursor_position() {
-            // if let Some(position2) = board_map.get_position(&board_options, position) {
             cursor_piece.translation = Vec3::new(
                 -(window.width() / 2.) + position[0] as f32,
                 -(window.height() / 2.) + position[1] as f32,
                 5.,
             );
-            // }
         }
     }
 }

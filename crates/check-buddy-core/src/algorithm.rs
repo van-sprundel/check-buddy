@@ -168,6 +168,8 @@ impl ChessEngine {
 
     /// score = materialWeight * (numWhitePieces - numBlackPieces) * who2move
     //TODO https://chessfox.com/example-of-the-complete-evaluation-process-of-chess-a-chess-position/
+    // https://www.chessprogramming.org/Evaluation
+    //
     fn evaluate(&self, board: BoardMap) -> f32 {
         let material_weight = board.get_material_weight() as f32;
         let num_white_pieces = board.get_num_white_pieces() as f32;
