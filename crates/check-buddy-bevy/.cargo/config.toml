@@ -1,5 +1,0 @@
-[target.wasm32-unknown-unknown]
-runner = "wasm-server-runner"
-
-[alias]
-serve = "run --target wasm32-unknown-unknown"
