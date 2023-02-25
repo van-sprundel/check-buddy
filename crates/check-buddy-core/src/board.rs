@@ -91,37 +91,14 @@ impl BoardMap {
                         space = 0;
                     }
 
+                    let is_black = col.get_color().unwrap() == PieceColor::Black;
                     match piece_type {
-                        PieceType::Rook => fen.push(if col.get_color() == PieceColor::Black {
-                            'r'
-                        } else {
-                            'R'
-                        }),
-                        PieceType::Pawn(_) => fen.push(if col.get_color() == PieceColor::Black {
-                            'p'
-                        } else {
-                            'P'
-                        }),
-                        PieceType::King => fen.push(if col.get_color() == PieceColor::Black {
-                            'k'
-                        } else {
-                            'K'
-                        }),
-                        PieceType::Queen => fen.push(if col.get_color() == PieceColor::Black {
-                            'q'
-                        } else {
-                            'Q'
-                        }),
-                        PieceType::Bishop => fen.push(if col.get_color() == PieceColor::Black {
-                            'b'
-                        } else {
-                            'B'
-                        }),
-                        PieceType::Knight => fen.push(if col.get_color() == PieceColor::Black {
-                            'n'
-                        } else {
-                            'N'
-                        }),
+                        PieceType::Rook => fen.push(if is_black { 'r' } else { 'R' }),
+                        PieceType::Pawn(_) => fen.push(if is_black { 'p' } else { 'P' }),
+                        PieceType::King => fen.push(if is_black { 'k' } else { 'K' }),
+                        PieceType::Queen => fen.push(if is_black { 'q' } else { 'Q' }),
+                        PieceType::Bishop => fen.push(if is_black { 'b' } else { 'B' }),
+                        PieceType::Knight => fen.push(if is_black { 'n' } else { 'N' }),
                     }
                 } else {
                     space += 1;
@@ -196,7 +173,7 @@ impl BoardMap {
         for (y, row) in self.squares.iter().enumerate() {
             for (x, p) in row.iter().enumerate() {
                 if let Some(t) = p.get_type() {
-                    if t == piece_type && p.get_color() == piece_color {
+                    if t == piece_type && p.get_color() == Some(piece_color) {
                         vec.push([y, x]);
                     }
                 }
@@ -214,7 +191,7 @@ impl BoardMap {
         let mut pieces = vec![];
         for (i, row) in self.squares.iter().enumerate() {
             for (j, piece) in row.iter().enumerate() {
-                if piece.get_color() == *self.get_active_color() {
+                if piece.get_color() == Some(*self.get_active_color()) {
                     pieces.push([i, j]);
                 }
             }
@@ -234,7 +211,7 @@ impl BoardMap {
         if !piece.is_piece() {
             return Err(anyhow!("You're trying to move a piece that's empty"));
         }
-        if piece.get_color() == self.active_color {
+        if piece.get_color() == Some(self.active_color) {
             let should_enable_en_passant = self.move_should_enable_en_passant(piece_move);
             if self.is_valid_move(piece_move) {
                 let en_passant = self.is_en_passant(piece_move);
@@ -273,7 +250,7 @@ impl BoardMap {
 
         let piece_to = self.squares[to[0]][to[1]];
 
-        if !piece_to.is_piece() || piece_to.get_color() != self.active_color {
+        if !piece_to.is_piece() || piece_to.get_color() != Some(self.active_color) {
             let moves = self.gen_legal_positions(from);
             return moves.contains(&to);
         }
@@ -281,7 +258,7 @@ impl BoardMap {
     }
     pub fn is_hit(&self, pos: Position) -> bool {
         let piece_on = self.get_piece(pos);
-        piece_on.is_piece() && piece_on.get_color() != self.active_color
+        piece_on.is_piece() && piece_on.get_color() != Some(self.active_color)
     }
     /// generate only legal move positions for piece
     pub fn gen_legal_positions(&self, from: Position) -> Vec<Position> {
@@ -303,7 +280,7 @@ impl BoardMap {
             // eprintln!("next possible moves: {:?}", next_moves);
             if !next_moves.iter().any(|x| {
                 let next_piece = temp_board.squares[x[0]][x[1]];
-                if next_piece.is_piece() && next_piece.get_color() == temp_board.active_color {
+                if next_piece.is_piece() && next_piece.get_color() == Some(temp_board.active_color) {
                     // eprintln!("{:?}", next_piece);
                     return Some(PieceType::King) == next_piece.get_type();
                 }
@@ -407,8 +384,9 @@ impl BoardMap {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         let shift = match piece_from.get_color() {
-            PieceColor::Black => 1,
-            PieceColor::White => -1,
+            Some(PieceColor::Black) => 1,
+            Some(PieceColor::White) => -1,
+            _ => panic!()
         };
 
         // piece blocking
@@ -533,7 +511,7 @@ impl BoardMap {
 
         if en_passant {
             // eprintln!("move is an en passant!");
-            let shift = if self.get_piece(from).get_color() == PieceColor::Black {
+            let shift = if self.get_piece(from).get_color() == Some(PieceColor::Black) {
                 -1
             } else {
                 1
@@ -544,8 +522,9 @@ impl BoardMap {
             }
         } else if trade {
             let color = match self.get_piece(from).get_color() {
-                PieceColor::Black => BLACK,
-                PieceColor::White => WHITE,
+                Some(PieceColor::Black) => BLACK,
+                Some(PieceColor::White) => WHITE,
+                _ => panic!()
             };
             self.set_piece(to, QUEEN | color);
         } else {
@@ -564,7 +543,7 @@ impl BoardMap {
         for rank in 0..8 {
             for file in 0..8 {
                 let piece = self.squares[rank][file];
-                if piece.is_piece() && piece.get_color() == self.active_color {
+                if piece.is_piece() && piece.get_color() == Some(self.active_color) {
                     let from_move = [rank, file];
                     let to_moves = self.gen_legal_positions([rank, file]);
                     let moves = to_moves
@@ -582,7 +561,7 @@ impl BoardMap {
         for rank in 0..8 {
             for file in 0..8 {
                 let piece = self.squares[rank][file];
-                if piece.is_piece() && piece.get_color() != self.active_color {
+                if piece.is_piece() && piece.get_color() != Some(self.active_color) {
                     // eprintln!("found enemy piece! {:?}", piece);
                     let moves = self.gen_moves([rank, file]);
                     opponent_positions.extend(moves);
@@ -598,8 +577,9 @@ impl BoardMap {
         if let Some(piece_type) = piece.get_type() {
             if piece_type == PieceType::Pawn(false) || piece_type == PieceType::Pawn(true) {
                 let shift = match piece.get_color() {
-                    PieceColor::Black => 1,
-                    PieceColor::White => -1,
+                    Some(PieceColor::Black) => 1,
+                    Some(PieceColor::White) => -1,
+                    _ => panic!()
                 };
                 let step_pos = [(to[0] as isize - shift) as usize, to[1]];
                 let step_piece = self.get_piece(step_pos);
@@ -661,7 +641,7 @@ impl BoardMap {
                     KING => 200,
                     _ => unimplemented!("{} is not a valid piece value", piece.0),
                 };
-                if self.active_color != piece.get_color() {
+                if piece.get_color() != Some(self.active_color) {
                     piece_weight *= -1;
                 }
                 res += piece_weight;
@@ -693,10 +673,11 @@ impl BoardMap {
         let PieceMove { from, to, .. } = piece_move;
         let piece = self.get_piece(from);
         if let Some(PieceType::Pawn(_)) = piece.get_type() {
-            if *self.get_active_color() == piece.get_color() {
+            if piece.get_color() == Some(*self.get_active_color()) {
                 return match piece.get_color() {
-                    PieceColor::White => from[0] == 6 && to[0] == 4,
-                    PieceColor::Black => from[0] == 1 && to[0] == 3,
+                    Some(PieceColor::White) => from[0] == 6 && to[0] == 4,
+                    Some(PieceColor::Black) => from[0] == 1 && to[0] == 3,
+                    _ => panic!()
                 };
             }
         }
@@ -719,7 +700,7 @@ impl Debug for BoardMap {
                 PieceColor::White => "white",
             }
         )
-        .unwrap();
+            .unwrap();
 
         Ok(())
     }
