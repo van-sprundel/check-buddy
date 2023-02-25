@@ -1,9 +1,7 @@
-use anyhow::{anyhow, Error, Result};
-use calamine::*;
+use anyhow::Result;
+
 use check_buddy_core::piece_move::{PieceMove, Position};
 use check_buddy_core::BoardMap;
-use csv::StringRecord;
-use std::ops::Sub;
 
 #[test]
 fn opening_move_should_be_valid() {

@@ -1,0 +1,10 @@
+[package]
+name = "check-buddy-gui"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+check-buddy-core = { path = "../check-buddy-core" }
+macroquad = "0.3"
