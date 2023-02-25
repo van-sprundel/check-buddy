@@ -55,7 +55,7 @@ impl BoardMap {
                         'n' => KNIGHT,
                         _ => 0,
                     };
-                    board.squares[7 - (index / 8)][index % 8] = Piece(color | rank);
+                    board.squares[(index / 8)][index % 8] = Piece(color | rank);
                     index += 1;
                 } else {
                     index += x.to_digit(10).unwrap() as usize;
@@ -407,8 +407,8 @@ impl BoardMap {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = vec![];
         let shift = match piece_from.get_color() {
-            PieceColor::Black => -1,
-            PieceColor::White => 1,
+            PieceColor::Black => 1,
+            PieceColor::White => -1,
         };
 
         // piece blocking
@@ -423,8 +423,8 @@ impl BoardMap {
             let vertical = (from[0] as i32 + shift * 2) as usize;
             if vertical < 8 {
                 let is_blocking = is_blocking || self.squares[vertical][from[1]].is_piece();
-                if ((piece_from.is_black() && from[0] == 6)
-                    || (piece_from.is_white() && from[0] == 1))
+                if ((piece_from.is_black() && from[0] == 1)
+                    || (piece_from.is_white() && from[0] == 6))
                     && !is_blocking
                 {
                     moves.push([vertical, from[1]]);
@@ -558,7 +558,6 @@ impl BoardMap {
         self.set_piece(from, self.get_piece(to).0);
         self.set_piece(to, last_piece);
     }
-
     /// generates all moves based on active color.
     pub fn gen_all_legal_moves(&self) -> Vec<PieceMove> {
         let mut legal_moves = vec![];
@@ -592,7 +591,6 @@ impl BoardMap {
         }
         opponent_positions
     }
-
     pub fn is_en_passant(&self, piece_move: PieceMove) -> bool {
         // only en passant moves can be moved diagonally on an empty square
         let PieceMove { from, to, .. } = piece_move;
@@ -600,8 +598,8 @@ impl BoardMap {
         if let Some(piece_type) = piece.get_type() {
             if piece_type == PieceType::Pawn(false) || piece_type == PieceType::Pawn(true) {
                 let shift = match piece.get_color() {
-                    PieceColor::Black => -1,
-                    PieceColor::White => 1,
+                    PieceColor::Black => 1,
+                    PieceColor::White => -1,
                 };
                 let step_pos = [(to[0] as isize - shift) as usize, to[1]];
                 let step_piece = self.get_piece(step_pos);
@@ -684,7 +682,6 @@ impl BoardMap {
             res + row.iter().filter(|&&item| item.0 > BLACK).count()
         }) as i32
     }
-
     fn switch_active_color(&mut self) {
         self.active_color = if self.active_color == PieceColor::Black {
             PieceColor::White
@@ -698,8 +695,8 @@ impl BoardMap {
         if let Some(PieceType::Pawn(_)) = piece.get_type() {
             if *self.get_active_color() == piece.get_color() {
                 return match piece.get_color() {
-                    PieceColor::Black => from[0] == 6 && to[0] == 4,
-                    PieceColor::White => from[0] == 1 && to[0] == 3,
+                    PieceColor::White => from[0] == 6 && to[0] == 4,
+                    PieceColor::Black => from[0] == 1 && to[0] == 3,
                 };
             }
         }
