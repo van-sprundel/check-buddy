@@ -1,8 +1,8 @@
 use crate::states::PointerState;
+use check_buddy_core::piece_move::{PieceMove, Position};
 use check_buddy_core::{BoardMap, Piece};
 use macroquad::prelude::*;
 use std::collections::HashMap;
-use check_buddy_core::piece_move::{PieceMove, Position};
 
 #[derive(Default)]
 pub struct Board {
@@ -34,7 +34,8 @@ impl Board {
                         (x as f32 * self.position_size) - self.position_padding,
                         y as f32 * self.position_size,
                     );
-                    self.draw_piece(piece, x_pos, y_pos, self.position_size).await;
+                    self.draw_piece(piece, x_pos, y_pos, self.position_size)
+                        .await;
                 }
             }
         }
@@ -59,7 +60,9 @@ impl Board {
             return;
         }
         let possible_piece = self.board_map.get_piece([y, x]);
-        if possible_piece.is_piece() && possible_piece.get_color() == *self.board_map.get_active_color() {
+        if possible_piece.is_piece()
+            && possible_piece.get_color() == *self.board_map.get_active_color()
+        {
             self.selected_piece = Some(possible_piece);
             self.selected_piece_position = Some([y, x]);
             self.selected_piece_move_positions = Some(self.board_map.gen_legal_positions([y, x]));
@@ -72,14 +75,17 @@ impl Board {
         if is_mouse_button_released(MouseButton::Left) {
             // get cursor position
             let (x_pos, y_pos) = mouse_position();
-            let (x, y) = ((x_pos / self.position_size) as usize, (y_pos / self.position_size) as usize);
+            let (x, y) = (
+                (x_pos / self.position_size) as usize,
+                (y_pos / self.position_size) as usize,
+            );
 
             if let Some(positions) = self.selected_piece_move_positions.clone() {
                 if positions.contains(&[y, x]) {
                     let piece_move = PieceMove::new(self.selected_piece_position.unwrap(), [y, x]);
                     match self.board_map.move_turn(piece_move) {
                         Ok(_) => {}
-                        Err(e) => println!("Invalid move! ({})", e)
+                        Err(e) => println!("Invalid move! ({})", e),
                     }
                 }
             }
@@ -97,13 +103,27 @@ impl Board {
         // draw moves
         if let Some(positions) = self.selected_piece_move_positions.clone() {
             for position in positions {
-                let (mut y, mut x) = (position[0] as f32 * self.position_size, position[1] as f32 * self.position_size);
+                let (mut y, mut x) = (
+                    position[0] as f32 * self.position_size,
+                    position[1] as f32 * self.position_size,
+                );
                 if self.board_map.get_piece(position).is_piece() {
-                    draw_rectangle(x, y, self.position_size, self.position_size, Color::from_rgba(255, 0, 0, 50));
+                    draw_rectangle(
+                        x,
+                        y,
+                        self.position_size,
+                        self.position_size,
+                        Color::from_rgba(255, 0, 0, 50),
+                    );
                 } else {
                     x += self.position_size / 2.;
                     y += self.position_size / 2.;
-                    draw_circle(x, y, self.position_size.sqrt(), Color::from_rgba(0, 0, 0, 25));
+                    draw_circle(
+                        x,
+                        y,
+                        self.position_size.sqrt(),
+                        Color::from_rgba(0, 0, 0, 25),
+                    );
                 }
             }
         }
@@ -113,7 +133,8 @@ impl Board {
         x_pos -= self.position_size / 2.;
         y_pos -= self.position_size / 2.;
         let piece = self.selected_piece.unwrap();
-        self.draw_piece(piece, x_pos, y_pos, self.position_size).await;
+        self.draw_piece(piece, x_pos, y_pos, self.position_size)
+            .await;
     }
 
     fn draw_board_square(&mut self, x: usize, y: usize) {
@@ -135,7 +156,11 @@ impl Board {
     }
 
     async fn draw_piece(&mut self, piece: Piece, x_pos: f32, y_pos: f32, size: f32) {
-        if !self.board_conf.textures.contains_key(piece.get_icon().unwrap()) {
+        if !self
+            .board_conf
+            .textures
+            .contains_key(piece.get_icon().unwrap())
+        {
             let path = &*("../../assets/".to_owned() + piece.get_icon().unwrap());
             self.board_conf.textures.insert(
                 piece.get_icon().unwrap().to_string(),
@@ -143,7 +168,11 @@ impl Board {
             );
         }
 
-        let texture = self.board_conf.textures.get(piece.get_icon().unwrap()).unwrap();
+        let texture = self
+            .board_conf
+            .textures
+            .get(piece.get_icon().unwrap())
+            .unwrap();
         draw_texture_ex(
             *texture,
             x_pos,
