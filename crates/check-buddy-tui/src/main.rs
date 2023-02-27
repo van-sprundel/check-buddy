@@ -53,6 +53,23 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     KeyCode::Char('q') => return Ok(()),
                     KeyCode::Right => app.next(),
                     KeyCode::Left => app.previous(),
+                    KeyCode::Enter => {
+                        let text = app.input.drain(..).collect::<String>();
+                        match app.board_map.parse_move(&text) {
+                            Ok(piece_move) => {
+                                if app.board_map.move_turn(piece_move).is_ok() {
+                                    app.move_history.push(text);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    KeyCode::Char(c) => {
+                        app.input.push(c);
+                    }
+                    KeyCode::Backspace => {
+                        app.input.pop();
+                    }
                     _ => {}
                 }
             }

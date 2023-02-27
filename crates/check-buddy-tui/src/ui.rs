@@ -53,20 +53,24 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         let piece = app.board_map.get_piece([col, row]);
 
         if piece.is_piece() {
-            let text = match (piece.get_color().unwrap(), piece.get_type().unwrap()) {
-                (PieceColor::Black, PieceType::Pawn(_)) => "BP",
-                (PieceColor::Black, PieceType::Rook) => "BR",
-                (PieceColor::Black, PieceType::Knight) => "BN",
-                (PieceColor::Black, PieceType::Bishop) => "BB",
-                (PieceColor::Black, PieceType::King) => "BK",
-                (PieceColor::Black, PieceType::Queen) => "BQ",
-                (PieceColor::White, PieceType::Pawn(_)) => "WP",
-                (PieceColor::White, PieceType::Rook) => "WR",
-                (PieceColor::White, PieceType::Knight) => "WN",
-                (PieceColor::White, PieceType::Bishop) => "WB",
-                (PieceColor::White, PieceType::King) => "WK",
-                (PieceColor::White, PieceType::Queen) => "WQ",
+            let piece_color = match piece.get_color().unwrap() {
+                PieceColor::Black => 'B',
+                PieceColor::White => 'W',
             };
+
+            let piece_type = match piece.get_type().unwrap() {
+                PieceType::Rook => 'R',
+                PieceType::Pawn(_) => 'P',
+                PieceType::King => 'K',
+                PieceType::Queen => 'Q',
+                PieceType::Bishop => 'B',
+                PieceType::Knight => 'N',
+            };
+
+            let mut text = String::with_capacity(2);
+            text.push(piece_color);
+            text.push(piece_type);
+
             let paragraph = Paragraph::new(text)
                 .alignment(Alignment::Center)
                 .block(block);
@@ -81,11 +85,11 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
 
     let bottom_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(0), Constraint::Max(4)])
+        .constraints([Constraint::Min(0), Constraint::Length(3)])
         .split(chunks[1]);
 
     let titles = app
-        .titles
+        .tab_titles
         .iter()
         .enumerate()
         .map(|(i, t)| {
@@ -111,8 +115,15 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         );
     f.render_widget(tabs, bottom_layout[0]);
 
-    let uci_input = Block::default()
+    let uci_block = Block::default()
         .borders(Borders::ALL)
         .style(Style::default().fg(Color::Cyan));
+    let uci_input = Paragraph::new(app.input.as_ref()).block(uci_block);
     f.render_widget(uci_input, bottom_layout[1]);
+    f.set_cursor(
+        // Put cursor past the end of the input text
+        bottom_layout[1].x + app.input.len() as u16 + 1,
+        // Move one line down, from the border to the input line
+        bottom_layout[1].y + 1,
+    )
 }

@@ -113,6 +113,9 @@ impl BoardMap {
         fen.pop();
         fen
     }
+    pub fn get_move_from_uci(&self, input: &str) -> Option<PieceMove> {
+        None
+    }
     pub fn parse_move(&self, buffer: &String) -> Result<PieceMove> {
         let buffer = buffer
             .chars()
@@ -280,7 +283,8 @@ impl BoardMap {
             // eprintln!("next possible moves: {:?}", next_moves);
             if !next_moves.iter().any(|x| {
                 let next_piece = temp_board.squares[x[0]][x[1]];
-                if next_piece.is_piece() && next_piece.get_color() == Some(temp_board.active_color) {
+                if next_piece.is_piece() && next_piece.get_color() == Some(temp_board.active_color)
+                {
                     // eprintln!("{:?}", next_piece);
                     return Some(PieceType::King) == next_piece.get_type();
                 }
@@ -386,7 +390,7 @@ impl BoardMap {
         let shift = match piece_from.get_color() {
             Some(PieceColor::Black) => 1,
             Some(PieceColor::White) => -1,
-            _ => panic!()
+            _ => panic!(),
         };
 
         // piece blocking
@@ -524,7 +528,7 @@ impl BoardMap {
             let color = match self.get_piece(from).get_color() {
                 Some(PieceColor::Black) => BLACK,
                 Some(PieceColor::White) => WHITE,
-                _ => panic!()
+                _ => panic!(),
             };
             self.set_piece(to, QUEEN | color);
         } else {
@@ -579,7 +583,7 @@ impl BoardMap {
                 let shift = match piece.get_color() {
                     Some(PieceColor::Black) => 1,
                     Some(PieceColor::White) => -1,
-                    _ => panic!()
+                    _ => panic!(),
                 };
                 let step_pos = [(to[0] as isize - shift) as usize, to[1]];
                 let step_piece = self.get_piece(step_pos);
@@ -677,7 +681,7 @@ impl BoardMap {
                 return match piece.get_color() {
                     Some(PieceColor::White) => from[0] == 6 && to[0] == 4,
                     Some(PieceColor::Black) => from[0] == 1 && to[0] == 3,
-                    _ => panic!()
+                    _ => panic!(),
                 };
             }
         }
@@ -700,7 +704,7 @@ impl Debug for BoardMap {
                 PieceColor::White => "white",
             }
         )
-            .unwrap();
+        .unwrap();
 
         Ok(())
     }
