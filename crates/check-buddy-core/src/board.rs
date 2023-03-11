@@ -113,10 +113,11 @@ impl BoardMap {
         fen.pop();
         fen
     }
-    pub fn get_move_from_uci(&self, input: &str) -> Option<PieceMove> {
-        None
-    }
     pub fn parse_move(&self, buffer: &String) -> Result<PieceMove> {
+        if buffer.len() <= 1 {
+            return Err(anyhow!("Invalid move"));
+        }
+
         let buffer = buffer
             .chars()
             .skip(buffer.len() - 2)
