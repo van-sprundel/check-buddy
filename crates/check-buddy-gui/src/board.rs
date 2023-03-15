@@ -1,5 +1,5 @@
 use crate::states::PointerState;
-use check_buddy_core::piece_move::{PieceMove, Position};
+use check_buddy_core::position_move::{Position, PositionMove};
 use check_buddy_core::{BoardMap, Piece};
 use macroquad::prelude::*;
 use std::collections::HashMap;
@@ -82,7 +82,8 @@ impl Board {
 
             if let Some(positions) = self.selected_piece_move_positions.clone() {
                 if positions.contains(&[y, x]) {
-                    let piece_move = PieceMove::new(self.selected_piece_position.unwrap(), [y, x]);
+                    let piece_move =
+                        PositionMove::new(self.selected_piece_position.unwrap(), [y, x]);
                     match self.board_map.move_turn(piece_move) {
                         Ok(_) => {}
                         Err(e) => println!("Invalid move! ({})", e),

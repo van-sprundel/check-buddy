@@ -1,12 +1,14 @@
+use crate::historical_move::{HistoricalMove, NON_PAWN_SYMBOLS, UciMoveType};
 use crate::piece::{piece_type::*, Piece, PieceColor};
-use crate::piece_move::{
-    Direction, PieceMove, Position, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
+use crate::position_move::{
+    Direction, Position, PositionMove, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
 };
 use anyhow::{anyhow, Result};
 use std::borrow::BorrowMut;
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut, Sub};
+use crate::errors::{HistoricalMoveError, PieceError, PieceMoveError};
 
 #[derive(Clone, Copy)]
 pub struct BoardMap {
@@ -136,57 +138,194 @@ impl BoardMap {
         fen.pop();
         fen
     }
-    pub fn parse_move(&self, buffer: &String) -> Result<PieceMove> {
-        let buffer = buffer
-            .chars()
-            .skip(buffer.len() - 2)
-            .take(2)
-            .collect::<String>(); //TODO hacky, fix
-        println!("{buffer}");
-        let non_pawn_move = buffer
-            .chars()
-            .next()
-            .ok_or(anyhow!("can't parse"))?
-            .is_uppercase();
-        let mut _buffer_index = if non_pawn_move { 0 } else { 1 };
-        let mut move_data = buffer.chars().collect::<Vec<_>>();
-        move_data.reverse();
-
-        let piece_type = if non_pawn_move {
-            match move_data.pop().ok_or(anyhow!("can't parse"))? {
-                'B' => PieceType::Bishop,
-                'N' => PieceType::Knight,
-                'K' => PieceType::King,
-                'R' => PieceType::Rook,
-                'Q' => PieceType::Queen,
-                _ => return Err(anyhow!("can't parse")),
+    pub fn parse_uci_to_historical_move(&mut self, uci: &str) -> Result<HistoricalMove> {
+        //TODO FILL IN ANY DEFAULTED VARIABLES
+        let uci_move_type = if uci.len() == 2 {
+            UciMoveType::Pawn {
+                take: false,
+                check: false,
+                promotion: false,
+            }
+        } else if uci.chars().nth(1) == Some('x') {
+            let check = uci.chars().last().unwrap() == '+';
+            if ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].contains(&uci.chars().nth(0).unwrap()) {
+                UciMoveType::Pawn {
+                    take: false,
+                    check,
+                    promotion: false,
+                }
+            } else {
+                UciMoveType::Default {
+                    take: false,
+                    check,
+                }
+            }
+        } else if uci.len() == 3 && uci.chars().nth(1) == Some('-') {
+            UciMoveType::CastleShort {
+                take: false,
+                check: false,
+            }
+        } else if uci.len() == 5 && uci.chars().nth(1) == Some('-') && uci.chars().nth(3) == Some('-') {
+            UciMoveType::CastleLong {
+                take: false,
+                check: false,
+            }
+        } else if uci.len() == 3 && NON_PAWN_SYMBOLS.contains(&uci.chars().nth(0).unwrap()) {
+            UciMoveType::Default {
+                take: false,
+                check: false,
             }
         } else {
-            //TODO check for piece on position and update
-            PieceType::Pawn(false)
+            return Err(HistoricalMoveError::InvalidUciMoveType.into());
         };
 
-        let positions = self.find_piece(*self.get_active_color(), piece_type);
-        for from_position in positions {
-            let mut move_data = move_data.clone();
-
-            let rank = (move_data.pop().ok_or(anyhow!("can't parse"))? as usize).sub(97);
-
-            let file = move_data
-                .pop()
-                .ok_or(anyhow!("can't parse"))?
-                .to_string()
-                .parse::<usize>()?
-                .sub(1);
-
-            let piece_move = PieceMove::new(from_position, [file, rank]);
-
-            if self.is_valid_move(piece_move) {
-                return Ok(piece_move);
+        let piece_type = match uci_move_type {
+            UciMoveType::Pawn { .. } | UciMoveType::PawnPromote { .. } => {
+                PieceType::Pawn(false)
             }
-        }
+            UciMoveType::Default { .. } => {
+                match uci.chars().nth(0).unwrap() {
+                    'K' => PieceType::King,
+                    'N' => PieceType::Knight,
+                    'Q' => PieceType::Queen,
+                    'R' => PieceType::Rook,
+                    'B' => PieceType::Bishop,
+                    _ => return Err(PieceError::SymbolNotFound.into()),
+                }
+            }
+            UciMoveType::CastleShort { .. } | UciMoveType::CastleLong { .. } => PieceType::King,
+        };
 
-        return Err(anyhow!("{:?} is not a valid move", move_data));
+        let to: Position = match uci_move_type {
+            UciMoveType::Pawn { take, .. } => {
+                let to = if take {
+                    uci.chars().skip(2).take(2).collect::<String>()
+                } else {
+                    uci.chars().take(2).collect::<String>()
+                };
+                self.parse_uci_position_to_file_rank(to)?
+            }
+            UciMoveType::PawnPromote { take, .. } => {
+                let to = if take {
+                    uci.chars().skip(2).take(2).collect::<String>()
+                } else {
+                    uci.chars().take(2).collect::<String>()
+                };
+                self.parse_uci_position_to_file_rank(to)?
+            }
+            UciMoveType::Default { take, .. } => {
+                if take {
+                    let to = uci.chars().skip(2).take(2).collect::<String>();
+                    let pos = self.parse_uci_position_to_file_rank(to)?;
+                    let piece = self.get_piece(pos);
+                    if !piece.is_piece() || self.get_active_color() == &piece.get_color() {
+                        return Err(anyhow!(PieceMoveError::InvalidTakePiece));
+                    }
+                    pos
+                } else {
+                    let to = uci.chars().skip(1).take(2).collect::<String>();
+                    self.parse_uci_position_to_file_rank(to)?
+                }
+            }
+            UciMoveType::CastleShort { .. } => {
+                if self.get_active_color() == &PieceColor::White {
+                    [7, 1]
+                } else {
+                    [0, 1]
+                }
+            }
+            UciMoveType::CastleLong { .. } => {
+                if self.get_active_color() == &PieceColor::White {
+                    [7, 5]
+                } else {
+                    [0, 5]
+                }
+            }
+        };
+
+        let from: Position = match uci_move_type {
+            UciMoveType::Pawn { take, promotion, .. } => {
+                if take {
+                    let shift = match self.get_active_color() {
+                        PieceColor::Black => -1,
+                        PieceColor::White => 1,
+                    };
+                    let pos1 = [((to[0] as i32) + shift) as usize, to[1]];
+                    let pos2 = [
+                        ((to[0] as i32) + shift) as usize,
+                        ((to[1] as i32) + 1) as usize,
+                    ];
+                    let pos3 = [
+                        ((to[0] as i32) + shift) as usize,
+                        ((to[1] as i32) - 1) as usize,
+                    ];
+
+                    self.verify_any_own_position(vec![pos1, pos2, pos3])?
+                } else if promotion {
+                    let should_be_on_file = match self.get_active_color() {
+                        PieceColor::Black => 6,
+                        PieceColor::White => 1,
+                    };
+
+                    let mut possible_position = None;
+
+                    for (rank, square) in self.squares[should_be_on_file].iter().enumerate() {
+                        if square.is_piece()
+                            && square.get_type().unwrap() == PieceType::Pawn(false)
+                            && square.get_color() == *self.get_active_color()
+                        {
+                            possible_position = Some([rank, should_be_on_file]);
+                            break;
+                        }
+                    }
+
+                    if possible_position.is_some() {
+                        possible_position.unwrap()
+                    } else {
+                        return Err(anyhow!("Couldn't find [from] position for promotion pawn"));
+                    }
+                } else {
+                    let shift = match self.get_active_color() {
+                        PieceColor::Black => -1,
+                        PieceColor::White => 1,
+                    };
+                    let pos1 = [((to[0] as i32) + shift) as usize, to[1]];
+                    let pos2 = [((to[0] as i32) + shift * 2) as usize, to[1]];
+                    self.verify_any_own_position(vec![pos1, pos2])?
+                }
+            }
+            UciMoveType::Default { .. } => {
+                let possible_positions = self.get_positions_from_type(&piece_type);
+                let mut found_position = None;
+                for position in possible_positions.iter() {
+                    let moves = self.gen_to_positions(*position);
+                    if moves.contains(&to) {
+                        found_position = Some(*position);
+                        break;
+                    }
+                }
+                if let Some(position) = found_position {
+                    position
+                } else {
+                    return Err(anyhow!(
+                        "Couldn't find [from] position on piece with [to] {:?}",
+                        to
+                    ));
+                }
+            }
+            UciMoveType::CastleShort { .. } | UciMoveType::CastleLong { .. } => {
+                if self.get_active_color() == &PieceColor::White {
+                    [7, 3]
+                } else {
+                    [0, 3]
+                }
+            }
+            UciMoveType::PawnPromote { .. } => {
+                unimplemented!()
+            }
+        };
+
+        Ok((uci_move_type, PositionMove::new(from, to)))
     }
     pub fn get_piece(&self, pos: Position) -> Piece {
         self.squares[pos[0]][pos[1]]
@@ -227,28 +366,25 @@ impl BoardMap {
     /// makes a move with check
     ///
     /// returns true if move was successful
-    pub fn move_turn(&mut self, piece_move: PieceMove) -> Result<()> {
-        let PieceMove { from, to, .. } = piece_move;
+    pub fn move_turn(&mut self, position_move: PositionMove) -> Result<()> {
+        let temp_board = *self;
+
+        let PositionMove { from, to, .. } = position_move;
         let (x, y) = (from[0], from[1]);
         let piece = self.squares[x][y];
+
         if !piece.is_piece() {
             return Err(anyhow!("You're trying to move a piece that's empty"));
         }
-        if piece.get_color() == self.active_color {
-            let should_enable_en_passant = self.move_should_enable_en_passant(piece_move);
-            if self.is_valid_move(piece_move) {
-                let en_passant = self.is_en_passant(piece_move);
-                let trade = self.is_trade(piece_move);
 
-                self.make_move(PieceMove {
-                    from: [x, y],
-                    to,
-                    en_passant,
-                    trade,
-                });
+        if piece.get_color() == self.active_color {
+            let should_enable_en_passant = self.move_should_enable_en_passant(position_move);
+            if self.is_valid_move(position_move) {
+                self.make_move(position_move);
 
                 let piece_to = &mut self.get_piece(to);
 
+                // TODO for en passant could be removed
                 if let Some(PieceType::Pawn(_)) = piece_to.get_type() {
                     if should_enable_en_passant {
                         // eprintln!("Piece became en passantable! ({},{})", to[0], to[1]);
@@ -258,18 +394,19 @@ impl BoardMap {
                     }
                 }
 
+                *self = temp_board;
                 self.switch_active_color();
                 Ok(())
             } else {
-                Err(anyhow!("Move was invalid"))
+                Err(PieceMoveError::IllegalMove.into())
             }
         } else {
-            Err(anyhow!("Piece is not yours"))
+            Err(PieceMoveError::NotYourPiece(piece, from).into())
         }
     }
     /// check if move is valid
-    pub fn is_valid_move(&self, piece_move: PieceMove) -> bool {
-        let PieceMove { from, to, .. } = piece_move;
+    pub fn is_valid_move(&self, piece_move: PositionMove) -> bool {
+        let PositionMove { from, to, .. } = piece_move;
 
         let piece_to = self.squares[to[0]][to[1]];
 
@@ -286,19 +423,23 @@ impl BoardMap {
     /// generate only legal move positions for piece
     pub fn gen_legal_positions(&self, from: Position) -> Vec<Position> {
         let mut temp_board = *self;
-        let moves = temp_board.gen_moves(from);
+        let moves = temp_board.gen_to_positions(from);
         let mut legal_moves = vec![];
         // eprintln!("moves {:?}", &moves);
 
         for to in moves.into_iter() {
+            let position_move = PositionMove::new(from, to);
+            let en_passant = self.is_en_passant(position_move);
+            let promotion = self.is_promotion(position_move);
             let last_piece = temp_board.squares[to[0]][to[1]].0;
 
-            temp_board.make_move(PieceMove {
+            let position_move = PositionMove {
                 from,
                 to,
-                en_passant: false,
-                trade: false,
-            });
+                en_passant,
+                promotion,
+            };
+            temp_board.make_move(position_move);
             let next_moves = temp_board.gen_all_opponent_positions();
             // eprintln!("next possible moves: {:?}", next_moves);
             if !next_moves.iter().any(|x| {
@@ -313,12 +454,7 @@ impl BoardMap {
             }
 
             temp_board.undo_move(
-                PieceMove {
-                    from,
-                    to,
-                    en_passant: false,
-                    trade: false,
-                },
+                position_move,
                 last_piece,
             );
         }
@@ -326,7 +462,7 @@ impl BoardMap {
         legal_moves
     }
     /// generate all possible moves for piece
-    pub fn gen_moves(&self, from: Position) -> Vec<Position> {
+    pub fn gen_to_positions(&self, from: Position) -> Vec<Position> {
         let piece_from = self.squares[from[0]][from[1]];
         if let Some(piece_type) = piece_from.get_type() {
             return match piece_type {
@@ -523,13 +659,8 @@ impl BoardMap {
         }
     }
     /// make a move (without check)
-    pub fn make_move(&mut self, piece_move: PieceMove) {
-        let PieceMove {
-            from,
-            to,
-            en_passant,
-            trade,
-        } = piece_move;
+    pub fn make_move(&mut self, position_move: PositionMove) {
+        let PositionMove { from, to, en_passant, promotion, } = position_move;
 
         if en_passant {
             // eprintln!("move is an en passant!");
@@ -542,7 +673,7 @@ impl BoardMap {
             if to_step[0] != 0 && to_step[1] != 0 && shift != -1 && to_step[0] != 8 {
                 self.set_piece(to_step, 0);
             }
-        } else if trade {
+        } else if promotion {
             let color = match self.get_piece(from).get_color() {
                 PieceColor::Black => BLACK,
                 PieceColor::White => WHITE,
@@ -553,13 +684,13 @@ impl BoardMap {
         }
         self.set_piece(from, 0);
     }
-    pub fn undo_move(&mut self, piece_move: PieceMove, last_piece: u32) {
-        let PieceMove { from, to, .. } = piece_move;
+    pub fn undo_move(&mut self, piece_move: PositionMove, last_piece: u32) {
+        let PositionMove { from, to, .. } = piece_move;
         self.set_piece(from, self.get_piece(to).0);
         self.set_piece(to, last_piece);
     }
     /// generates all moves based on active color.
-    pub fn gen_all_legal_moves(&self) -> Vec<PieceMove> {
+    pub fn gen_all_legal_moves(&self) -> Vec<PositionMove> {
         let mut legal_moves = vec![];
         for rank in 0..8 {
             for file in 0..8 {
@@ -569,7 +700,7 @@ impl BoardMap {
                     let to_moves = self.gen_legal_positions([rank, file]);
                     let moves = to_moves
                         .iter()
-                        .map(|&to| PieceMove::new(from_move, to))
+                        .map(|&to| PositionMove::new(from_move, to))
                         .collect::<Vec<_>>();
                     legal_moves.extend(moves);
                 }
@@ -584,16 +715,16 @@ impl BoardMap {
                 let piece = self.squares[rank][file];
                 if piece.is_piece() && piece.get_color() != self.active_color {
                     // eprintln!("found enemy piece! {:?}", piece);
-                    let moves = self.gen_moves([rank, file]);
+                    let moves = self.gen_to_positions([rank, file]);
                     opponent_positions.extend(moves);
                 }
             }
         }
         opponent_positions
     }
-    pub fn is_en_passant(&self, piece_move: PieceMove) -> bool {
+    pub fn is_en_passant(&self, piece_move: PositionMove) -> bool {
         // only en passant moves can be moved diagonally on an empty square
-        let PieceMove { from, to, .. } = piece_move;
+        let PositionMove { from, to, .. } = piece_move;
         let piece = self.get_piece(from);
         if let Some(piece_type) = piece.get_type() {
             if piece_type == PieceType::Pawn(false) || piece_type == PieceType::Pawn(true) {
@@ -616,8 +747,8 @@ impl BoardMap {
         }
         false
     }
-    pub fn is_trade(&self, piece_move: PieceMove) -> bool {
-        let PieceMove { from, to, .. } = piece_move;
+    pub fn is_promotion(&self, piece_move: PositionMove) -> bool {
+        let PositionMove { from, to, .. } = piece_move;
         let piece = self.get_piece(from);
         if let Some(piece_type) = piece.get_type() {
             return (piece_type == PieceType::Pawn(false) || piece_type == PieceType::Pawn(true))
@@ -682,6 +813,21 @@ impl BoardMap {
             res + row.iter().filter(|&&item| item.0 > BLACK).count()
         }) as i32
     }
+    fn get_positions_from_type(&self, piece_type: &PieceType) -> Vec<Position> {
+        let mut possible_positions = vec![];
+        for (i, row) in self.squares.iter().enumerate() {
+            for (j, position) in row.iter().enumerate() {
+                if position.is_piece() {
+                    if let Some(pt) = position.get_type() {
+                        if piece_type == &pt {
+                            possible_positions.push([i, j]);
+                        }
+                    }
+                }
+            }
+        }
+        possible_positions
+    }
     fn switch_active_color(&mut self) {
         self.active_color = if self.active_color == PieceColor::Black {
             PieceColor::White
@@ -689,8 +835,8 @@ impl BoardMap {
             PieceColor::Black
         };
     }
-    fn move_should_enable_en_passant(&self, piece_move: PieceMove) -> bool {
-        let PieceMove { from, to, .. } = piece_move;
+    fn move_should_enable_en_passant(&self, piece_move: PositionMove) -> bool {
+        let PositionMove { from, to, .. } = piece_move;
         let piece = self.get_piece(from);
         if let Some(PieceType::Pawn(_)) = piece.get_type() {
             if *self.get_active_color() == piece.get_color() {
@@ -702,12 +848,42 @@ impl BoardMap {
         }
         false
     }
+
+    fn parse_uci_position_to_file_rank(&self, mut position: String) -> Result<Position> {
+        let file = 7 - position
+            .pop()
+            .ok_or(anyhow!("can't parse"))?
+            .to_string()
+            .parse::<usize>()?
+            .sub(1);
+
+        let rank = (position.pop().ok_or(anyhow!("can't parse"))? as usize).sub(97);
+
+        Ok([file, rank])
+    }
+
+    fn verify_any_own_position(&self, positions: Vec<Position>) -> Result<Position> {
+        for pos in positions.iter() {
+            if self.own_position(pos) {
+                return Ok(*pos);
+            }
+        }
+        return Err(anyhow!("Couldn't find [from] position for {:?}", positions));
+    }
+
+    fn own_position(&self, pos: &Position) -> bool {
+        let piece = self.get_piece(*pos);
+        if piece.is_piece() && piece.get_color() == *self.get_active_color() {
+            return true;
+        }
+        false
+    }
 }
 
 impl Debug for BoardMap {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for x in 0..8 {
-            writeln!(f, "{} {:?}", 8 - x, self.squares[7 - x]).unwrap();
+        for i in 0..8 {
+            writeln!(f, "{} {:?}", 8 - i, self.squares[i]).unwrap();
         }
         writeln!(f, "   a   b   c   d   e   f   g   h").unwrap();
         writeln!(f, "fen: {}", self.get_fen()).unwrap();
@@ -719,7 +895,7 @@ impl Debug for BoardMap {
                 PieceColor::White => "white",
             }
         )
-        .unwrap();
+            .unwrap();
 
         Ok(())
     }

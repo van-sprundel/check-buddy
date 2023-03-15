@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Error, Result};
 use calamine::*;
-use check_buddy_core::piece_move::Position;
+use check_buddy_core::position_move::Position;
 use check_buddy_core::BoardMap;
 use std::ops::Sub;
 

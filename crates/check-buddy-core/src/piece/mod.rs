@@ -1,5 +1,6 @@
-pub mod piece_move;
+pub mod historical_move;
 pub mod piece_type;
+pub mod position_move;
 
 use piece_type::*;
 

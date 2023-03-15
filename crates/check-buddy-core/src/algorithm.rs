@@ -1,5 +1,5 @@
 #![allow(unused_must_use)]
-use crate::piece_move::PieceMove;
+use crate::position_move::PositionMove;
 use crate::{BoardMap, PieceColor};
 use rand::Rng;
 
@@ -10,13 +10,13 @@ impl ChessEngine {
     const MIN: f32 = -1000.;
     const MAX: f32 = 1000.;
 
-    pub fn find_best_move_minimax_ab(&mut self, board: BoardMap, depth: usize) -> PieceMove {
+    pub fn find_best_move_minimax_ab(&mut self, board: BoardMap, depth: usize) -> PositionMove {
         let mut best_value = Self::MIN;
         let mut best_moves = vec![];
         for from in board.get_active_pieces() {
             let moves = board.gen_legal_positions(from);
             for to in moves {
-                let piece_move = PieceMove::new(from, to);
+                let piece_move = PositionMove::new(from, to);
                 let piece_value = board.get_piece(from).0;
                 let mut temp_board = board;
 
@@ -49,13 +49,13 @@ impl ChessEngine {
         best_moves[index]
     }
 
-    pub fn find_best_move_negamax(&mut self, board: BoardMap, depth: usize) -> PieceMove {
+    pub fn find_best_move_negamax(&mut self, board: BoardMap, depth: usize) -> PositionMove {
         let mut best_value = Self::MIN;
         let mut best_moves = vec![];
         for from in board.get_active_pieces() {
             let moves = board.gen_legal_positions(from);
             for to in moves {
-                let piece_move = PieceMove::new(from, to);
+                let piece_move = PositionMove::new(from, to);
                 let piece_value = board.get_piece(from).0;
 
                 let mut temp_board = board;

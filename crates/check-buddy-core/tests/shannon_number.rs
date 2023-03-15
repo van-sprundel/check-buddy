@@ -1,4 +1,4 @@
-use check_buddy_core::piece_move::{PieceMove, Position};
+use check_buddy_core::position_move::{Position, PositionMove};
 use check_buddy_core::BoardMap;
 
 const SHANNON_TABLE: [usize; 6] = [20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
@@ -44,11 +44,11 @@ fn move_integration(board_map: BoardMap, depth: usize) -> usize {
     for (from, to) in positions {
         let mut board_map = board_map.clone();
         if board_map
-            .move_turn(PieceMove {
+            .move_turn(PositionMove {
                 from,
                 to,
                 en_passant: false,
-                trade: false,
+                promotion: false,
             })
             .is_ok()
         {
