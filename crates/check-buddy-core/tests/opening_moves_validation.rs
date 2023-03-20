@@ -9,7 +9,7 @@ fn opening_move_should_be_valid() {
     move_data.iter().for_each(|(moves, move_name)| {
         let mut board = BoardMap::starting();
         for piece_move in moves {
-            let actual_move = board.parse_move(piece_move).expect(&*format!("Couldn't parse move {}", piece_move));
+            let actual_move = board.parse_pgn_to_historical_move(piece_move).expect(&*format!("Couldn't parse move {}", piece_move)).1;
             let PositionMove {from, to, ..} = actual_move;
             let positions = (0..8)
                 .flat_map(|x| {

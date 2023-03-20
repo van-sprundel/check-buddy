@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use check_buddy_core::*;
-use std::collections::HashMap;
 
 pub struct PgnParser;
 
@@ -8,8 +7,8 @@ impl PgnParser {
     pub fn parse(buffer: String) -> Result<Game> {
         let mut game = Game::default();
         let (info, uci) = buffer
-            .split_once::<&str>("\r\n\r\n")
-            .ok_or(anyhow!("Can't parse PGN"))?;
+            .split_once::<&str>("\n\n")
+            .ok_or(anyhow!("Can't split info and UCI"))?;
 
         Self::parse_info(&mut game, info)?;
         Self::parse_uci(&mut game, uci)?;
@@ -36,15 +35,15 @@ impl PgnParser {
     fn parse_uci(game: &mut Game, uci: &str) -> Result<()> {
         let binding = uci.split_whitespace().collect::<Vec<&str>>();
         let mut uci_line = binding.chunks(3).collect::<Vec<&[&str]>>();
-        let winning = uci_line.pop();
+        let _winning = uci_line.pop();
 
         for moves in uci_line.iter() {
             println!("{moves:?}");
             let (move1, move2) = (moves[1], moves[2]);
-            let historical_move1 = game.board_map.parse_uci_to_historical_move(move1)?;
+            let historical_move1 = game.board_map.parse_pgn_to_historical_move(move1)?;
             println!("{:?}", historical_move1);
             game.board_map.move_turn(historical_move1.1)?;
-            let historical_move2 = game.board_map.parse_uci_to_historical_move(move2)?;
+            let historical_move2 = game.board_map.parse_pgn_to_historical_move(move2)?;
             println!("{:?}", historical_move2);
             game.board_map.move_turn(historical_move2.1)?;
         }
@@ -59,7 +58,7 @@ mod tests {
 
     fn get_example_pgn() -> Vec<u8> {
         let mut path = std::env::current_dir().unwrap();
-        path.push("assets\\pgns\\example.pgn");
+        path.push("assets/pgns/example.pgn");
 
         std::fs::read(path).unwrap()
     }
@@ -67,6 +66,6 @@ mod tests {
     #[test]
     fn should_return_happy_flow() {
         let pgn = String::from_utf8(get_example_pgn()).unwrap();
-        let e = PgnParser::parse(pgn).unwrap();
+        let _ = PgnParser::parse(pgn).unwrap();
     }
 }

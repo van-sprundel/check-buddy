@@ -17,7 +17,7 @@ fn main() {
         stdin.read_line(&mut buffer).unwrap();
         buffer.retain(|c| !c.is_whitespace());
 
-        if let Ok(historical_move) = board.parse_uci_to_historical_move(&buffer) {
+        if let Ok(historical_move) = board.parse_pgn_to_historical_move(&buffer) {
             println!("{:?}", historical_move);
             let _ = board.move_turn(historical_move.1);
         } else {

@@ -1,4 +1,5 @@
-use crate::historical_move::{HistoricalMove, NON_PAWN_SYMBOLS, UciMoveType};
+use crate::errors::{HistoricalMoveError, PieceError, PieceMoveError};
+use crate::historical_move::{HistoricalMove, UciMoveType, NON_PAWN_SYMBOLS};
 use crate::piece::{piece_type::*, Piece, PieceColor};
 use crate::position_move::{
     Direction, Position, PositionMove, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
@@ -8,7 +9,6 @@ use std::borrow::BorrowMut;
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut, Sub};
-use crate::errors::{HistoricalMoveError, PieceError, PieceMoveError};
 
 #[derive(Clone, Copy)]
 pub struct BoardMap {
@@ -138,61 +138,56 @@ impl BoardMap {
         fen.pop();
         fen
     }
-    pub fn parse_uci_to_historical_move(&mut self, uci: &str) -> Result<HistoricalMove> {
+    pub fn parse_pgn_to_historical_move(&mut self, uci: &str) -> Result<HistoricalMove> {
         //TODO FILL IN ANY DEFAULTED VARIABLES
+        let check = uci.chars().last().unwrap() == '+';
         let uci_move_type = if uci.len() == 2 {
             UciMoveType::Pawn {
                 take: false,
-                check: false,
+                check,
                 promotion: false,
             }
-        } else if uci.chars().nth(1) == Some('x') {
-            let check = uci.chars().last().unwrap() == '+';
+        } else if uci.len() == 4 {
+            let take = uci.chars().nth(2) == Some('x');
             if ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].contains(&uci.chars().nth(0).unwrap()) {
                 UciMoveType::Pawn {
-                    take: false,
+                    take,
                     check,
                     promotion: false,
                 }
             } else {
-                UciMoveType::Default {
-                    take: false,
-                    check,
-                }
+                UciMoveType::Default { take: false, check }
             }
         } else if uci.len() == 3 && uci.chars().nth(1) == Some('-') {
-            UciMoveType::CastleShort {
-                take: false,
-                check: false,
-            }
-        } else if uci.len() == 5 && uci.chars().nth(1) == Some('-') && uci.chars().nth(3) == Some('-') {
-            UciMoveType::CastleLong {
-                take: false,
-                check: false,
-            }
-        } else if uci.len() == 3 && NON_PAWN_SYMBOLS.contains(&uci.chars().nth(0).unwrap()) {
-            UciMoveType::Default {
-                take: false,
-                check: false,
-            }
+            UciMoveType::CastleShort { take: false, check }
+        } else if uci.len() == 5
+            && uci.chars().nth(1) == Some('-')
+            && uci.chars().nth(3) == Some('-')
+        {
+            UciMoveType::CastleLong { take: false, check }
+        } else if [3, 4].contains(&uci.len())
+            && NON_PAWN_SYMBOLS.contains(&uci.chars().nth(0).unwrap())
+        {
+            //TODO
+            // Re8
+            // Rfe8
+            // Rfxe8
+            // Rfxe8+
+            UciMoveType::Default { take: false, check }
         } else {
             return Err(HistoricalMoveError::InvalidUciMoveType.into());
         };
 
         let piece_type = match uci_move_type {
-            UciMoveType::Pawn { .. } | UciMoveType::PawnPromote { .. } => {
-                PieceType::Pawn(false)
-            }
-            UciMoveType::Default { .. } => {
-                match uci.chars().nth(0).unwrap() {
-                    'K' => PieceType::King,
-                    'N' => PieceType::Knight,
-                    'Q' => PieceType::Queen,
-                    'R' => PieceType::Rook,
-                    'B' => PieceType::Bishop,
-                    _ => return Err(PieceError::SymbolNotFound.into()),
-                }
-            }
+            UciMoveType::Pawn { .. } | UciMoveType::PawnPromote { .. } => PieceType::Pawn(false),
+            UciMoveType::Default { .. } => match uci.chars().nth(0).unwrap() {
+                'K' => PieceType::King,
+                'N' => PieceType::Knight,
+                'Q' => PieceType::Queen,
+                'R' => PieceType::Rook,
+                'B' => PieceType::Bishop,
+                _ => return Err(PieceError::SymbolNotFound.into()),
+            },
             UciMoveType::CastleShort { .. } | UciMoveType::CastleLong { .. } => PieceType::King,
         };
 
@@ -244,7 +239,9 @@ impl BoardMap {
         };
 
         let from: Position = match uci_move_type {
-            UciMoveType::Pawn { take, promotion, .. } => {
+            UciMoveType::Pawn {
+                take, promotion, ..
+            } => {
                 if take {
                     let shift = match self.get_active_color() {
                         PieceColor::Black => -1,
@@ -453,10 +450,7 @@ impl BoardMap {
                 legal_moves.push(to);
             }
 
-            temp_board.undo_move(
-                position_move,
-                last_piece,
-            );
+            temp_board.undo_move(position_move, last_piece);
         }
         // eprintln!("legal moves {:?}", &legal_moves);
         legal_moves
@@ -660,7 +654,12 @@ impl BoardMap {
     }
     /// make a move (without check)
     pub fn make_move(&mut self, position_move: PositionMove) {
-        let PositionMove { from, to, en_passant, promotion, } = position_move;
+        let PositionMove {
+            from,
+            to,
+            en_passant,
+            promotion,
+        } = position_move;
 
         if en_passant {
             // eprintln!("move is an en passant!");
@@ -895,7 +894,7 @@ impl Debug for BoardMap {
                 PieceColor::White => "white",
             }
         )
-            .unwrap();
+        .unwrap();
 
         Ok(())
     }
