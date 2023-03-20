@@ -1,31 +1,78 @@
-use anyhow::{anyhow, Result};
-use check_buddy_core::piece_move::PieceMove;
-use check_buddy_core::piece_type::PieceType;
-use check_buddy_core::BoardMap;
-use std::io;
-use std::io::Write;
-use std::ops::Sub;
+mod app;
+mod ui;
 
-fn main() {
-    let mut board = BoardMap::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    let mut buffer = String::new();
+use crate::ui::ui;
+use app::App;
+use crossterm::event::KeyEventKind;
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use std::{error::Error, io};
+use tui::{
+    backend::{Backend, CrosstermBackend},
+    Terminal,
+};
+
+fn main() -> Result<(), Box<dyn Error>> {
+    // setup terminal
+    enable_raw_mode()?;
     let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
 
+    // create app and run it
+    let app = App::new();
+    let res = run_app(&mut terminal, app);
+
+    // restore terminal
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+
+    if let Err(err) = res {
+        println!("{:?}", err)
+    }
+
+    Ok(())
+}
+
+fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
-        let _ = stdout.lock().write_all(format!("{:?}", board).as_ref());
-        let _ = stdout.lock().write_all("> ".as_ref());
-        let _ = stdout.flush();
+        terminal.draw(|f| ui(f, &app))?;
 
-        let stdin = io::stdin();
-        buffer.clear();
-        stdin.read_line(&mut buffer).unwrap();
-        buffer.retain(|c| !c.is_whitespace());
-
-        if let Ok(piece_move) = board.parse_move(&buffer) {
-            println!("{:?}", piece_move);
-            board.move_turn(piece_move);
-        } else {
-            println!("no move :(");
+        if let Event::Key(key) = event::read()? {
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Right => app.next(),
+                    KeyCode::Left => app.previous(),
+                    KeyCode::Enter => {
+                        let text = app.input.drain(..).collect::<String>();
+                        match app.board_map.parse_move(&text) {
+                            Ok(piece_move) => {
+                                if app.board_map.move_turn(piece_move).is_ok() {
+                                    app.move_history.push(text);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    KeyCode::Char(c) => {
+                        app.input.push(c);
+                    }
+                    KeyCode::Backspace => {
+                        app.input.pop();
+                    }
+                    _ => {}
+                }
+            }
         }
     }
 }
