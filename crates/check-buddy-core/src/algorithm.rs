@@ -20,7 +20,7 @@ impl ChessEngine {
                 let piece_value = board.get_piece(from).0;
                 let mut temp_board = board;
 
-                temp_board.move_turn(piece_move);
+                temp_board.single_move_turn(piece_move);
                 let move_value =
                     self.ab_max(depth, temp_board, ChessEngine::MIN, ChessEngine::MAX, true);
                 temp_board.undo_move(piece_move, piece_value);
@@ -59,7 +59,7 @@ impl ChessEngine {
                 let piece_value = board.get_piece(from).0;
 
                 let mut temp_board = board;
-                temp_board.move_turn(piece_move);
+                temp_board.single_move_turn(piece_move);
                 let move_value = self.nega_max(temp_board, depth);
                 temp_board.undo_move(piece_move, piece_value);
 
@@ -108,7 +108,7 @@ impl ChessEngine {
 
                 let piece_value = board.get_piece(piece_move.from).0;
 
-                temp_board.move_turn(*piece_move);
+                temp_board.single_move_turn(*piece_move);
                 let score = self.ab_max(depth - 1, temp_board, alpha, beta, !is_maximizing_player);
                 temp_board.undo_move(*piece_move, piece_value);
 
@@ -132,7 +132,7 @@ impl ChessEngine {
 
                 let piece_value = board.get_piece(piece_move.from).0;
 
-                temp_board.move_turn(*piece_move);
+                temp_board.single_move_turn(*piece_move);
                 let score = self.ab_max(depth - 1, temp_board, alpha, beta, !is_maximizing_player);
                 temp_board.undo_move(*piece_move, piece_value);
 
@@ -156,7 +156,7 @@ impl ChessEngine {
 
         for piece_move in moves.iter() {
             let mut temp_board = board;
-            temp_board.move_turn(*piece_move);
+            temp_board.single_move_turn(*piece_move);
 
             let value = -self.nega_max(board, depth - 1);
             if value > max {

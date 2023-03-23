@@ -84,7 +84,7 @@ impl Board {
                 if positions.contains(&[y, x]) {
                     let piece_move =
                         PositionMove::new(self.selected_piece_position.unwrap(), [y, x]);
-                    match self.board_map.move_turn(piece_move) {
+                    match self.board_map.single_move_turn(piece_move) {
                         Ok(_) => {}
                         Err(e) => println!("Invalid move! ({})", e),
                     }

@@ -12,7 +12,7 @@ pub const QUEEN: u32 = 6;
 pub const WHITE: u32 = 8;
 pub const BLACK: u32 = 16;
 
-#[derive(Debug, PartialOrd, PartialEq, Eq)]
+#[derive(Debug, PartialOrd, PartialEq, Eq, Clone, Copy)]
 pub enum PieceType {
     Rook,
     Pawn(bool),

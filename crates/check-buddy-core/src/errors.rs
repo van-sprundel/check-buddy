@@ -1,8 +1,8 @@
 #![allow(unused)]
 
-use thiserror::Error;
-use crate::Piece;
 use crate::position_move::Position;
+use crate::Piece;
+use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum PieceError {
@@ -16,8 +16,12 @@ pub enum PieceMoveError {
     IllegalMove,
     #[error("Piece you're taking is not valid")]
     InvalidTakePiece,
+    #[error("You're trying to move a piece that's empty")]
+    EmptySquare,
     #[error("{0:?} on {1:?} is not yours")]
     NotYourPiece(Piece, Position),
+    #[error("Move not found")]
+    MoveNotFound,
 }
 
 #[derive(Error, Debug)]

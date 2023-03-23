@@ -44,7 +44,7 @@ fn move_integration(board_map: BoardMap, depth: usize) -> usize {
     for (from, to) in positions {
         let mut board_map = board_map.clone();
         if board_map
-            .move_turn(PositionMove {
+            .single_move_turn(PositionMove {
                 from,
                 to,
                 en_passant: false,

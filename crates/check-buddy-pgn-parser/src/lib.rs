@@ -6,8 +6,14 @@ pub struct PgnParser;
 impl PgnParser {
     pub fn parse(buffer: String) -> Result<Game> {
         let mut game = Game::default();
+
+        #[cfg(target_os = "macos")]
+        let empty_line = "\n\n";
+        #[cfg(target_os = "windows")]
+        let empty_line = "\r\n\r\n";
+
         let (info, uci) = buffer
-            .split_once::<&str>("\n\n")
+            .split_once::<&str>(empty_line)
             .ok_or(anyhow!("Can't split info and UCI"))?;
 
         Self::parse_info(&mut game, info)?;
@@ -40,12 +46,14 @@ impl PgnParser {
         for moves in uci_line.iter() {
             println!("{moves:?}");
             let (move1, move2) = (moves[1], moves[2]);
-            let historical_move1 = game.board_map.parse_pgn_to_historical_move(move1)?;
-            println!("{:?}", historical_move1);
-            game.board_map.move_turn(historical_move1.1)?;
-            let historical_move2 = game.board_map.parse_pgn_to_historical_move(move2)?;
-            println!("{:?}", historical_move2);
-            game.board_map.move_turn(historical_move2.1)?;
+
+            let uci_move1 = game.board_map.parse_pgn_to_uci_move(move1)?;
+            println!("{:?}", uci_move1);
+            game.board_map.uci_move_turn(uci_move1)?;
+
+            let uci_move2 = game.board_map.parse_pgn_to_uci_move(move2)?;
+            println!("{:?}", uci_move2);
+            game.board_map.uci_move_turn(uci_move2)?;
         }
 
         Ok(())
@@ -58,7 +66,10 @@ mod tests {
 
     fn get_example_pgn() -> Vec<u8> {
         let mut path = std::env::current_dir().unwrap();
+        #[cfg(target_os = "macos")]
         path.push("assets/pgns/example.pgn");
+        #[cfg(target_os = "windows")]
+        path.push("assets\\pgns\\example.pgn");
 
         std::fs::read(path).unwrap()
     }

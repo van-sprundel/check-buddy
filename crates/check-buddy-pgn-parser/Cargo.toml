@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 check-buddy-core = { path = "../check-buddy-core" }
-anyhow = "1"
+anyhow = "1.0"
