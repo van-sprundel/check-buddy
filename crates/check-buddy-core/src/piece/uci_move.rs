@@ -1,6 +1,6 @@
-use crate::{piece_type::PieceType, position_move::PositionMove};
+use crate::{piece_type::PieceType, position_move::PositionMove, PieceColor};
 
-pub type HistoricalMove = (UciMoveType, PositionMove);
+pub type UciMove = (UciMoveType, PositionMove);
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum UciMoveType {
@@ -10,15 +10,18 @@ pub enum UciMoveType {
         promotion: bool,
     },
     CastleShort {
+        piece_color: PieceColor,
         take: bool,
         check: bool,
     },
     CastleLong {
+        piece_color: PieceColor,
         take: bool,
         check: bool,
     },
     Default {
         piece_type: PieceType,
+        specified_rank: bool,
         take: bool,
         check: bool,
     },

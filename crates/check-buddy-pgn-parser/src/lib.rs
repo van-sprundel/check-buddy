@@ -50,10 +50,11 @@ impl PgnParser {
             let uci_move1 = game.board_map.parse_pgn_to_uci_move(move1)?;
             println!("{:?}", uci_move1);
             game.board_map.uci_move_turn(uci_move1)?;
-
+            println!("{:?}", game.board_map);
             let uci_move2 = game.board_map.parse_pgn_to_uci_move(move2)?;
             println!("{:?}", uci_move2);
             game.board_map.uci_move_turn(uci_move2)?;
+            println!("{:?}", game.board_map);
         }
 
         Ok(())

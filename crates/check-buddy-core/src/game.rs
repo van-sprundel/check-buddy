@@ -1,11 +1,11 @@
-use crate::historical_move::HistoricalMove;
+use crate::uci_move::UciMove;
 use crate::*;
 use std::collections::HashMap;
 
 pub struct Game {
     pub info: HashMap<String, String>,
     pub board_map: BoardMap,
-    pub historical_moves: Vec<HistoricalMove>,
+    pub historical_moves: Vec<UciMove>,
     pub result: Option<bool>,
 }
 

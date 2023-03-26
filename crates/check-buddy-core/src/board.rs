@@ -1,9 +1,9 @@
 use crate::errors::*;
-use crate::historical_move::{HistoricalMove, UciMoveType, NON_PAWN_SYMBOLS};
 use crate::piece::{piece_type::*, Piece, PieceColor};
 use crate::position_move::{
     Direction, Position, PositionMove, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
 };
+use crate::uci_move::{UciMove, UciMoveType, NON_PAWN_SYMBOLS};
 use anyhow::{anyhow, Result};
 use std::borrow::BorrowMut;
 use std::cmp::min;
@@ -11,6 +11,7 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut, Sub};
 
 const RANKS: [char; 8] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const FILES: [char; 8] = ['1', '2', '3', '4', '5', '6', '7', '8'];
 
 #[derive(Clone, Copy)]
 pub struct BoardMap {
@@ -140,11 +141,11 @@ impl BoardMap {
         fen.pop();
         fen
     }
-    pub fn parse_pgn_to_uci_move(&mut self, mut uci: &str) -> Result<HistoricalMove> {
-        let check = uci.chars().next() == Some('+');
+    pub fn parse_pgn_to_uci_move(&mut self, mut uci: &str) -> Result<UciMove> {
+        let check = uci.ends_with('+');
         if check {
             let mut chars = uci.chars();
-            chars.next();
+            chars.next_back();
             uci = chars.as_str();
         }
 
@@ -154,30 +155,34 @@ impl BoardMap {
                 check,
                 promotion: false,
             }
-        } else if uci.len() == 4 && RANKS.contains(&uci.chars().nth(0).unwrap()) {
-            let take = uci.chars().nth(2) == Some('x');
+        } else if RANKS.contains(&uci.chars().next().unwrap()) {
+            let specified_file = FILES.contains(&uci.chars().nth(1).unwrap());
+            let take = (!specified_file && uci.chars().nth(1) == Some('x'))
+                || (specified_file && uci.chars().nth(2) == Some('x'));
+
             UciMoveType::Pawn {
                 take,
                 check,
                 promotion: false,
             }
         } else if uci == "O-O" {
-            UciMoveType::CastleShort { take: false, check }
+            UciMoveType::CastleShort {
+                piece_color: self.active_color,
+                take: false,
+                check,
+            }
         } else if uci == "O-O-O" {
-            UciMoveType::CastleLong { take: false, check }
-        } else if uci.len() >= 3 && NON_PAWN_SYMBOLS.contains(&uci.chars().nth(0).unwrap()) {
-            let specified_rank = RANKS.contains(&uci.chars().nth(1).unwrap());
+            UciMoveType::CastleLong {
+                piece_color: self.active_color,
+                take: false,
+                check,
+            }
+        } else if uci.len() >= 3 && NON_PAWN_SYMBOLS.contains(&uci.chars().next().unwrap()) {
+            let specified_rank = uci.len() > 3 && RANKS.contains(&uci.chars().nth(1).unwrap());
             let take = (!specified_rank && uci.chars().nth(1) == Some('x'))
                 || (specified_rank && uci.chars().nth(2) == Some('x'));
 
-            //TODO
-            // Re8     - Rook moves to e8
-            // Rxe8    - Rook takes e8
-            // RxQ     - Rook takes Queen
-            // Rfe8    - Rook on f rank moves to e8
-            // Rfxe8   - Rook on f rank takes e8
-            // RfxQ    - Rook on f rank takes Queen
-            let piece_type = match uci.chars().nth(0).unwrap() {
+            let piece_type = match uci.chars().next().unwrap() {
                 'K' => PieceType::King,
                 'N' => PieceType::Knight,
                 'Q' => PieceType::Queen,
@@ -187,6 +192,7 @@ impl BoardMap {
             };
 
             UciMoveType::Default {
+                specified_rank,
                 piece_type,
                 take,
                 check,
@@ -196,7 +202,7 @@ impl BoardMap {
         };
 
         let to: Position = match uci_move_type {
-            UciMoveType::Pawn { take, .. } => {
+            UciMoveType::Pawn { take, .. } | UciMoveType::PawnPromote { take, .. } => {
                 let to = if take {
                     uci.chars().skip(2).take(2).collect::<String>()
                 } else {
@@ -204,40 +210,27 @@ impl BoardMap {
                 };
                 self.parse_uci_position_to_file_rank(to)?
             }
-            UciMoveType::PawnPromote { take, .. } => {
-                let to = if take {
-                    uci.chars().skip(2).take(2).collect::<String>()
-                } else {
-                    uci.chars().take(2).collect::<String>()
-                };
+            UciMoveType::Default {
+                specified_rank,
+                take,
+                ..
+            } => {
+                let offset = specified_rank as usize + take as usize;
+                let to = uci.chars().skip(offset + 1).take(2).collect::<String>();
                 self.parse_uci_position_to_file_rank(to)?
             }
-            UciMoveType::Default { take, .. } => {
-                if take {
-                    let to = uci.chars().skip(2).take(2).collect::<String>();
-                    let pos = self.parse_uci_position_to_file_rank(to)?;
-                    let piece = self.get_piece(pos);
-                    if !piece.is_piece() || self.get_active_color() == &piece.get_color() {
-                        return Err(anyhow!(PieceMoveError::InvalidTakePiece));
-                    }
-                    pos
-                } else {
-                    let to = uci.chars().skip(1).take(2).collect::<String>();
-                    self.parse_uci_position_to_file_rank(to)?
-                }
-            }
-            UciMoveType::CastleShort { .. } => {
+            UciMoveType::CastleLong { .. } => {
                 if self.get_active_color() == &PieceColor::White {
                     [7, 1]
                 } else {
                     [0, 1]
                 }
             }
-            UciMoveType::CastleLong { .. } => {
+            UciMoveType::CastleShort { .. } => {
                 if self.get_active_color() == &PieceColor::White {
-                    [7, 5]
+                    [7, 6]
                 } else {
-                    [0, 5]
+                    [0, 6]
                 }
             }
         };
@@ -280,8 +273,8 @@ impl BoardMap {
                         }
                     }
 
-                    if possible_position.is_some() {
-                        possible_position.unwrap()
+                    if let Some(possible_position) = possible_position {
+                        possible_position
                     } else {
                         return Err(anyhow!(HistoricalMoveError::FromNotFound));
                     }
@@ -316,9 +309,9 @@ impl BoardMap {
             }
             UciMoveType::CastleShort { .. } | UciMoveType::CastleLong { .. } => {
                 if self.get_active_color() == &PieceColor::White {
-                    [7, 3]
+                    [7, 4]
                 } else {
-                    [0, 3]
+                    [0, 4]
                 }
             }
             UciMoveType::PawnPromote { .. } => {
@@ -367,33 +360,51 @@ impl BoardMap {
     /// makes a move with uci info
     ///
     /// returns true if move was successful
-    pub fn uci_move_turn(&mut self, uci_move: HistoricalMove) -> Result<()> {
-        let temp_board = *self;
+    pub fn uci_move_turn(&mut self, uci_move: UciMove) -> Result<()> {
+        if let UciMoveType::CastleShort { piece_color, .. } = uci_move.0 {
+            self.make_move(uci_move.1);
+            if piece_color == PieceColor::White {
+                self.make_move(PositionMove::new([7, 7], [7, 5]));
+            } else {
+                self.make_move(PositionMove::new([0, 7], [0, 5]));
+            }
+        } else if let UciMoveType::CastleLong { piece_color, .. } = uci_move.0 {
+            self.make_move(uci_move.1);
+            if piece_color == PieceColor::White {
+                self.make_move(PositionMove::new([7, 0], [7, 3]));
+            } else {
+                self.make_move(PositionMove::new([0, 0], [0, 3]));
+            }
+        } else {
+            let position_move = uci_move.1;
 
-        let position_move = uci_move.1;
+            let PositionMove { to, .. } = position_move;
 
-        let PositionMove { from, to, .. } = position_move;
-        let (x, y) = (from[0], from[1]);
-        let piece = self.squares[x][y];
+            match uci_move.0 {
+                UciMoveType::Pawn { .. } => {}
+                UciMoveType::Default { .. } => {}
+                UciMoveType::PawnPromote { .. } => {}
+                _ => {}
+            }
 
-        let should_enable_en_passant = self.move_should_enable_en_passant(position_move);
-        self.is_valid_move(position_move)?;
+            self.is_valid_move(position_move)?;
+            self.make_move(position_move);
 
-        self.make_move(position_move);
+            let piece_to = &mut self.get_piece(to);
 
-        let piece_to = &mut self.get_piece(to);
+            // TODO for en passant could be removed
+            if let Some(PieceType::Pawn(_)) = piece_to.get_type() {
+                let should_enable_en_passant = self.move_should_enable_en_passant(position_move);
 
-        // TODO for en passant could be removed
-        if let Some(PieceType::Pawn(_)) = piece_to.get_type() {
-            if should_enable_en_passant {
-                // eprintln!("Piece became en passantable! ({},{})", to[0], to[1]);
-                self.get_piece_mut(to).0 += 32;
-            } else if self.get_piece(to).0 > 32 {
-                self.get_piece_mut(to).0 -= 32;
+                if should_enable_en_passant {
+                    // eprintln!("Piece became en passantable! ({},{})", to[0], to[1]);
+                    self.get_piece_mut(to).0 += 32;
+                } else if self.get_piece(to).0 > 32 {
+                    self.get_piece_mut(to).0 -= 32;
+                }
             }
         }
 
-        *self = temp_board;
         self.switch_active_color();
         Ok(())
     }
@@ -403,9 +414,7 @@ impl BoardMap {
     pub fn single_move_turn(&mut self, position_move: PositionMove) -> Result<()> {
         let temp_board = *self;
 
-        let PositionMove { from, to, .. } = position_move;
-        let (x, y) = (from[0], from[1]);
-        let piece = self.squares[x][y];
+        let PositionMove { to, .. } = position_move;
 
         let should_enable_en_passant = self.move_should_enable_en_passant(position_move);
         self.is_valid_move(position_move)?;
@@ -441,6 +450,10 @@ impl BoardMap {
 
         if piece_from.get_color() != self.active_color {
             return Err(anyhow!(PieceMoveError::NotYourPiece(piece_from, from)));
+        }
+
+        if piece_to.is_piece() && piece_to.get_color() == self.active_color {
+            return Err(anyhow!(PieceMoveError::NotYourPiece(piece_to, to)));
         }
 
         let moves = self.gen_legal_positions(from);
@@ -856,7 +869,7 @@ impl BoardMap {
             for (j, position) in row.iter().enumerate() {
                 if position.is_piece() {
                     if let Some(pt) = position.get_type() {
-                        if piece_type == &pt {
+                        if piece_type == &pt && position.get_color() == self.active_color {
                             possible_positions.push([i, j]);
                         }
                     }
@@ -905,7 +918,7 @@ impl BoardMap {
                 return Ok(*pos);
             }
         }
-        return Err(anyhow!("Couldn't find [from] position for {:?}", positions));
+        Err(anyhow!("Couldn't find [from] position for {:?}", positions))
     }
 
     fn own_position(&self, pos: &Position) -> bool {
@@ -916,6 +929,7 @@ impl BoardMap {
         false
     }
 }
+
 impl Debug for BoardMap {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for i in 0..8 {

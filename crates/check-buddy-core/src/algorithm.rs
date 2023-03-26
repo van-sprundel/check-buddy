@@ -96,7 +96,7 @@ impl ChessEngine {
         mut beta: f32,
         is_maximizing_player: bool,
     ) -> f32 {
-        return if is_maximizing_player {
+        if is_maximizing_player {
             // AB MAX
             if depth == 0 {
                 return self.evaluate(board);
@@ -144,7 +144,7 @@ impl ChessEngine {
                 }
             }
             beta
-        };
+        }
     }
 
     fn nega_max(&mut self, board: BoardMap, depth: usize) -> f32 {
