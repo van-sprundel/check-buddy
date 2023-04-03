@@ -70,7 +70,7 @@ fn to_position(piece_move: &str) -> Result<Position> {
 
     let rank = (piece_move.pop().ok_or(anyhow!("can't parse"))? as usize).sub(97);
 
-    let file = piece_move
+    let file = 7 - piece_move
         .pop()
         .ok_or(anyhow!("can't parse"))?
         .to_string()

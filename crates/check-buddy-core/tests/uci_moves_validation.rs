@@ -4,13 +4,13 @@ use check_buddy_core::position_move::{Position, PositionMove};
 use check_buddy_core::BoardMap;
 
 #[test]
-fn opening_move_should_be_valid() {
+fn uci_moves_should_be_valid() -> Result<()> {
     let move_data = gen_move_data().unwrap();
-    move_data.iter().for_each(|(moves, move_name)| {
+    for (row, (moves, move_name)) in move_data.iter().enumerate() {
         let mut board = BoardMap::starting();
         for piece_move in moves {
-            let actual_move = board.parse_pgn_to_uci_move(piece_move).expect(&*format!("Couldn't parse move {}", piece_move)).1;
-            let PositionMove {from, to, ..} = actual_move;
+            let actual_move = board.parse_uci_to_move(piece_move).expect(&*format!("Game {}: ({})", row, move_name));
+            let PositionMove { from, to, .. } = actual_move.1;
             let positions = (0..8)
                 .flat_map(|x| {
                     (0..8)
@@ -31,14 +31,16 @@ fn opening_move_should_be_valid() {
             {
                 let piece = board.get_piece(from);
                 println! {"{:?}", board};
-                panic!(
-                    "move {} invalid. \nMoving piece {:?} from {:?} to {:?} isn't seen as a valid move",
-                    move_name, piece, from, to
-                );
+                println!("move {} is invalid", piece_move);
+                println!("Moving piece {:?} from {:?} to {:?} isn't seen as a valid move", piece, from, to);
+                panic!();
             }
-            board.single_move_turn(actual_move).unwrap();
+            board.uci_move_turn(actual_move)?;
+            println!("{:?}", piece_move);
+            println!("{:?}", board);
         }
-    });
+    }
+    Ok(())
 }
 
 fn gen_move_data() -> Result<Vec<(Vec<String>, String)>> {

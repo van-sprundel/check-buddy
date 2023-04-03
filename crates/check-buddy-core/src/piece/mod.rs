@@ -1,8 +1,9 @@
 pub mod piece_type;
-pub mod position_move;
-pub mod uci_move;
+pub mod piece_color;
 
+use std::fmt::{Debug, Formatter};
 use piece_type::*;
+use piece_color::*;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Piece(pub u32);
@@ -57,8 +58,34 @@ impl Piece {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
-pub enum PieceColor {
-    Black,
-    White,
+impl Debug for Piece {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let piece = if self.is_black() {
+            match (self.0 % 32) - BLACK {
+                PAWN => if self.0 > 32 { "BP!" } else { "BP" },
+                KING => "BK",
+                QUEEN => "BQ",
+                ROOK => "BR",
+                BISHOP => "BB",
+                KNIGHT => "BN",
+                _ => "□",
+            }
+        } else if self.is_white() {
+            match (self.0 % 32) - WHITE {
+                PAWN => if self.0 > 32 { "WP!" } else { "WP" },
+                KING => "WK",
+                QUEEN => "WQ",
+                ROOK => "WR",
+                BISHOP => "WB",
+                KNIGHT => "WN",
+                _ => "■",
+            }
+        } else if self.0 == 100 {
+            "▪"
+        } else {
+            ""
+        };
+
+        write!(f, "{:^3}", piece)
+    }
 }

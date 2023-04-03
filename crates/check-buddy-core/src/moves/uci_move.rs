@@ -1,4 +1,4 @@
-use crate::{piece_type::PieceType, position_move::PositionMove, PieceColor};
+use crate::{piece_type::PieceType, position_move::PositionMove, piece_color::PieceColor};
 
 pub type UciMove = (UciMoveType, PositionMove);
 
@@ -7,7 +7,7 @@ pub enum UciMoveType {
     Pawn {
         take: bool,
         check: bool,
-        promotion: bool,
+        promotion: Option<PieceType>,
     },
     CastleShort {
         piece_color: PieceColor,
@@ -22,10 +22,6 @@ pub enum UciMoveType {
     Default {
         piece_type: PieceType,
         specified_rank: bool,
-        take: bool,
-        check: bool,
-    },
-    PawnPromote {
         take: bool,
         check: bool,
     },

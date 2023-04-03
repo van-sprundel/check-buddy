@@ -22,34 +22,15 @@ pub enum PieceType {
     Knight,
 }
 
-impl Debug for Piece {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let piece = if self.is_black() {
-            match (self.0 % 32) - BLACK {
-                PAWN => "BP",
-                KING => "BK",
-                QUEEN => "BQ",
-                ROOK => "BR",
-                BISHOP => "BB",
-                KNIGHT => "BN",
-                _ => "□",
-            }
-        } else if self.is_white() {
-            match (self.0 % 32) - WHITE {
-                PAWN => "WP",
-                KING => "WK",
-                QUEEN => "WQ",
-                ROOK => "WR",
-                BISHOP => "WB",
-                KNIGHT => "WN",
-                _ => "■",
-            }
-        } else if self.0 == 100 {
-            "▪"
-        } else {
-            ""
-        };
-
-        write!(f, "{:^2}", piece)
+impl PieceType {
+    pub(crate) fn to_value(self) -> u32 {
+        match self {
+            PieceType::Rook => ROOK,
+            PieceType::Pawn(_) => PAWN,
+            PieceType::King => KING,
+            PieceType::Queen => QUEEN,
+            PieceType::Bishop => BISHOP,
+            PieceType::Knight => KNIGHT
+        }
     }
 }

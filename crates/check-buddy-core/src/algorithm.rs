@@ -1,7 +1,8 @@
 #![allow(unused_must_use)]
 use crate::position_move::PositionMove;
-use crate::{BoardMap, PieceColor};
+use crate::BoardMap;
 use rand::Rng;
+use crate::piece_color::PieceColor;
 
 #[derive(Default, Clone)]
 pub struct ChessEngine {}

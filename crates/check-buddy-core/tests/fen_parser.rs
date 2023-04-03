@@ -6,29 +6,29 @@ use check_buddy_core::{BoardMap, Piece};
 fn fen_to_board() {
     let board = BoardMap::from_fen("4k3/8/8/8/8/8/8/3K4 w - - 0 1");
 
-    assert_piece(board, [7, 4], KING | BLACK);
-    assert_piece(board, [0, 3], KING | WHITE);
+    assert_piece(board, [0, 4], KING | BLACK);
+    assert_piece(board, [7, 3], KING | WHITE);
 }
 
 #[test]
 fn complex_fen_to_board() {
     let board = BoardMap::from_fen("4k2N/1qq5/p4b2/1B6/3R2B1/1n2BqP1/8/2QK2r1");
-    assert_piece(board, [7, 4], KING | BLACK);
-    assert_piece(board, [7, 7], KNIGHT | WHITE);
-    assert_piece(board, [6, 1], QUEEN | BLACK);
-    assert_piece(board, [6, 2], QUEEN | BLACK);
-    assert_piece(board, [5, 0], PAWN | BLACK);
-    assert_piece(board, [5, 5], BISHOP | BLACK);
-    assert_piece(board, [4, 1], BISHOP | WHITE);
-    assert_piece(board, [3, 3], ROOK | WHITE);
-    assert_piece(board, [3, 6], BISHOP | WHITE);
-    assert_piece(board, [2, 1], KNIGHT | BLACK);
-    assert_piece(board, [2, 4], BISHOP | WHITE);
-    assert_piece(board, [2, 5], QUEEN | BLACK);
-    assert_piece(board, [2, 6], PAWN | WHITE);
-    assert_piece(board, [0, 2], QUEEN | WHITE);
-    assert_piece(board, [0, 3], KING | WHITE);
-    assert_piece(board, [0, 6], ROOK | BLACK);
+    assert_piece(board, [0, 4], KING | BLACK);
+    assert_piece(board, [0, 7], KNIGHT | WHITE);
+    assert_piece(board, [1, 1], QUEEN | BLACK);
+    assert_piece(board, [1, 2], QUEEN | BLACK);
+    assert_piece(board, [2, 0], PAWN | BLACK);
+    assert_piece(board, [2, 5], BISHOP | BLACK);
+    assert_piece(board, [3, 1], BISHOP | WHITE);
+    assert_piece(board, [4, 3], ROOK | WHITE);
+    assert_piece(board, [4, 6], BISHOP | WHITE);
+    assert_piece(board, [5, 1], KNIGHT | BLACK);
+    assert_piece(board, [5, 4], BISHOP | WHITE);
+    assert_piece(board, [5, 5], QUEEN | BLACK);
+    assert_piece(board, [5, 6], PAWN | WHITE);
+    assert_piece(board, [7, 2], QUEEN | WHITE);
+    assert_piece(board, [7, 3], KING | WHITE);
+    assert_piece(board, [7, 6], ROOK | BLACK);
 }
 
 #[test]

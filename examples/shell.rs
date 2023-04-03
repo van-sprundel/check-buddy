@@ -17,11 +17,11 @@ fn main() {
         stdin.read_line(&mut buffer).unwrap();
         buffer.retain(|c| !c.is_whitespace());
 
-        if let Ok(historical_move) = board.parse_pgn_to_uci_move(&buffer) {
-            println!("{:?}", historical_move);
-            let _ = board.single_move_turn(historical_move.1);
-        } else {
-            println!("no move :(");
+        match board.parse_uci_to_move(&buffer) {
+            Ok(uci_move) => {
+                let _ = board.uci_move_turn(uci_move);
+            }
+            Err(e) => println!("{}", e)
         }
     }
 }
