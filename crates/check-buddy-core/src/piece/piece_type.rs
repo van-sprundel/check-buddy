@@ -30,7 +30,7 @@ impl PieceType {
             PieceType::King => KING,
             PieceType::Queen => QUEEN,
             PieceType::Bishop => BISHOP,
-            PieceType::Knight => KNIGHT
+            PieceType::Knight => KNIGHT,
         }
     }
 }

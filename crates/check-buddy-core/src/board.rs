@@ -1,15 +1,15 @@
 use crate::errors::*;
-use crate::piece::{piece_type::*, Piece};
 use crate::moves::position_move::{
     Direction, Position, PositionMove, DIRECTION_OFFSETS, KNIGHT_DIRECTION_OFFSETS,
 };
+use crate::piece::{piece_type::*, Piece};
+use crate::piece_color::PieceColor;
 use crate::uci_move::{UciMove, UciMoveType, NON_PAWN_SYMBOLS};
 use anyhow::{anyhow, Result};
 use std::borrow::BorrowMut;
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
 use std::ops::{Deref, DerefMut, Sub};
-use crate::piece_color::PieceColor;
 
 const RANKS: [char; 8] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const FILES: [char; 8] = ['1', '2', '3', '4', '5', '6', '7', '8'];
@@ -215,7 +215,10 @@ impl BoardMap {
             // Rbxe8    1 | 2 | 3
             // Rbe8     1 | x | 2
 
-            let specified_rank = uci.len() > 3 && RANKS.contains(&uci.chars().nth(1).unwrap()) && (RANKS.contains(&uci.chars().nth(2).unwrap()) || RANKS.contains(&uci.chars().nth(3).unwrap()));
+            let specified_rank = uci.len() > 3
+                && RANKS.contains(&uci.chars().nth(1).unwrap())
+                && (RANKS.contains(&uci.chars().nth(2).unwrap())
+                    || RANKS.contains(&uci.chars().nth(3).unwrap()));
             let take = (!specified_rank && uci.chars().nth(1) == Some('x'))
                 || (specified_rank && uci.chars().nth(2) == Some('x'));
 
@@ -273,9 +276,7 @@ impl BoardMap {
         };
 
         let from: Position = match uci_move_type {
-            UciMoveType::Pawn {
-                take, ..
-            } => {
+            UciMoveType::Pawn { take, .. } => {
                 if take {
                     let rank = (uci.chars().next().ok_or(anyhow!("can't parse"))? as usize).sub(97);
 
@@ -287,13 +288,13 @@ impl BoardMap {
                     // o f .
                     let pos1 = [
                         ((to[0] as i32) - shift) as usize,
-                        ((to[1] as i32) + 1) as usize
+                        ((to[1] as i32) + 1) as usize,
                     ];
                     // . . t
                     // . f o
                     let pos2 = [
                         ((to[0] as i32) - shift) as usize,
-                        ((to[1] as i32) - 1) as usize
+                        ((to[1] as i32) - 1) as usize,
                     ];
                     // t . .
                     // . f .
@@ -319,17 +320,25 @@ impl BoardMap {
                     self.verify_any_own_position(vec![pos1, pos2], None)?
                 }
             }
-            UciMoveType::Default { piece_type, specified_rank, .. } => {
+            UciMoveType::Default {
+                piece_type,
+                specified_rank,
+                ..
+            } => {
                 let mut possible_positions = self.get_positions_from_type(&piece_type);
 
                 if specified_rank {
-                    let specified_rank = (uci.chars().nth(1).ok_or(anyhow!("Can't parse rank"))? as usize).sub(97);
-                    possible_positions = possible_positions.iter().filter_map(|&x| {
-                        if x[1] == specified_rank {
-                            return Some(x);
-                        }
-                        None
-                    }).collect::<Vec<_>>();
+                    let specified_rank =
+                        (uci.chars().nth(1).ok_or(anyhow!("Can't parse rank"))? as usize).sub(97);
+                    possible_positions = possible_positions
+                        .iter()
+                        .filter_map(|&x| {
+                            if x[1] == specified_rank {
+                                return Some(x);
+                            }
+                            None
+                        })
+                        .collect::<Vec<_>>();
                 }
 
                 let mut found_position = None;
@@ -346,7 +355,8 @@ impl BoardMap {
                     println!("{:?}", self);
                     return Err(anyhow!(
                         "Couldn't find [from] position for {:?} with [to] {:?}",
-                        uci, to
+                        uci,
+                        to
                     ));
                 }
             }
@@ -626,14 +636,20 @@ impl BoardMap {
         if self.get_active_color() == &PieceColor::Black && self.black_can_castle {
             //TODO check if any pieces in the way
             let possible_king = self.get_piece([0, 4]);
-            if possible_king.is_piece() && possible_king.is_black() && possible_king.get_type().unwrap() == PieceType::King {
+            if possible_king.is_piece()
+                && possible_king.is_black()
+                && possible_king.get_type().unwrap() == PieceType::King
+            {
                 positions.push([0, 6]);
                 positions.push([0, 2]);
             }
         } else if self.get_active_color() == &PieceColor::White && self.white_can_castle {
             //TODO check if any pieces in the way
             let possible_king = self.get_piece([7, 4]);
-            if possible_king.is_piece() && possible_king.is_white() && possible_king.get_type().unwrap() == PieceType::King {
+            if possible_king.is_piece()
+                && possible_king.is_white()
+                && possible_king.get_type().unwrap() == PieceType::King
+            {
                 positions.push([7, 6]);
                 positions.push([7, 2]);
             }
@@ -969,7 +985,11 @@ impl BoardMap {
         Ok([file, rank])
     }
 
-    fn verify_any_own_position(&self, positions: Vec<Position>, rank: Option<usize>) -> Result<Position> {
+    fn verify_any_own_position(
+        &self,
+        positions: Vec<Position>,
+        rank: Option<usize>,
+    ) -> Result<Position> {
         for pos in positions.iter() {
             if let Some(rank) = rank {
                 if pos[1] != rank {
@@ -994,7 +1014,7 @@ impl BoardMap {
     }
 
     fn handle_possible_en_passant(&mut self, position_move: PositionMove) {
-        let PositionMove {to, ..} = position_move;
+        let PositionMove { to, .. } = position_move;
         let should_enable_en_passant = self.move_should_enable_en_passant(position_move);
 
         if should_enable_en_passant {
@@ -1021,7 +1041,7 @@ impl Debug for BoardMap {
                 PieceColor::White => "white",
             }
         )
-            .unwrap();
+        .unwrap();
 
         Ok(())
     }

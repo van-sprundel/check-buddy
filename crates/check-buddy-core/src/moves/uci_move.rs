@@ -1,4 +1,4 @@
-use crate::{piece_type::PieceType, position_move::PositionMove, piece_color::PieceColor};
+use crate::{piece_color::PieceColor, piece_type::PieceType, position_move::PositionMove};
 
 pub type UciMove = (UciMoveType, PositionMove);
 

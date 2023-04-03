@@ -1,9 +1,9 @@
-pub mod piece_type;
 pub mod piece_color;
+pub mod piece_type;
 
-use std::fmt::{Debug, Formatter};
-use piece_type::*;
 use piece_color::*;
+use piece_type::*;
+use std::fmt::{Debug, Formatter};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Piece(pub u32);
@@ -62,7 +62,13 @@ impl Debug for Piece {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let piece = if self.is_black() {
             match (self.0 % 32) - BLACK {
-                PAWN => if self.0 > 32 { "BP!" } else { "BP" },
+                PAWN => {
+                    if self.0 > 32 {
+                        "BP!"
+                    } else {
+                        "BP"
+                    }
+                }
                 KING => "BK",
                 QUEEN => "BQ",
                 ROOK => "BR",
@@ -72,7 +78,13 @@ impl Debug for Piece {
             }
         } else if self.is_white() {
             match (self.0 % 32) - WHITE {
-                PAWN => if self.0 > 32 { "WP!" } else { "WP" },
+                PAWN => {
+                    if self.0 > 32 {
+                        "WP!"
+                    } else {
+                        "WP"
+                    }
+                }
                 KING => "WK",
                 QUEEN => "WQ",
                 ROOK => "WR",

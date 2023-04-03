@@ -21,7 +21,7 @@ fn main() {
             Ok(uci_move) => {
                 let _ = board.uci_move_turn(uci_move);
             }
-            Err(e) => println!("{}", e)
+            Err(e) => println!("{}", e),
         }
     }
 }

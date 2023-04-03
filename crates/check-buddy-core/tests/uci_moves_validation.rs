@@ -9,7 +9,9 @@ fn uci_moves_should_be_valid() -> Result<()> {
     for (row, (moves, move_name)) in move_data.iter().enumerate() {
         let mut board = BoardMap::starting();
         for piece_move in moves {
-            let actual_move = board.parse_uci_to_move(piece_move).expect(&*format!("Game {}: ({})", row, move_name));
+            let actual_move = board
+                .parse_uci_to_move(piece_move)
+                .expect(&*format!("Game {}: ({})", row, move_name));
             let PositionMove { from, to, .. } = actual_move.1;
             let positions = (0..8)
                 .flat_map(|x| {
@@ -32,7 +34,10 @@ fn uci_moves_should_be_valid() -> Result<()> {
                 let piece = board.get_piece(from);
                 println! {"{:?}", board};
                 println!("move {} is invalid", piece_move);
-                println!("Moving piece {:?} from {:?} to {:?} isn't seen as a valid move", piece, from, to);
+                println!(
+                    "Moving piece {:?} from {:?} to {:?} isn't seen as a valid move",
+                    piece, from, to
+                );
                 panic!();
             }
             board.uci_move_turn(actual_move)?;
