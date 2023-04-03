@@ -98,6 +98,6 @@ impl Debug for Piece {
             ""
         };
 
-        write!(f, "{:^3}", piece)
+        write!(f, "{:<3}", piece)
     }
 }

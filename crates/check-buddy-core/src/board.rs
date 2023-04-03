@@ -65,7 +65,7 @@ impl BoardMap {
                         'n' => KNIGHT,
                         _ => 0,
                     };
-                    board.squares[(index / 8)][index % 8] = Piece(color | rank);
+                    board.squares[index / 8][index % 8] = Piece(color | rank);
                     index += 1;
                 } else {
                     index += x.to_digit(10).unwrap() as usize;
@@ -101,38 +101,20 @@ impl BoardMap {
                         space = 0;
                     }
 
-                    match piece_type {
-                        PieceType::Rook => fen.push(if col.get_color() == PieceColor::Black {
-                            'r'
-                        } else {
-                            'R'
-                        }),
-                        PieceType::Pawn(_) => fen.push(if col.get_color() == PieceColor::Black {
-                            'p'
-                        } else {
-                            'P'
-                        }),
-                        PieceType::King => fen.push(if col.get_color() == PieceColor::Black {
-                            'k'
-                        } else {
-                            'K'
-                        }),
-                        PieceType::Queen => fen.push(if col.get_color() == PieceColor::Black {
-                            'q'
-                        } else {
-                            'Q'
-                        }),
-                        PieceType::Bishop => fen.push(if col.get_color() == PieceColor::Black {
-                            'b'
-                        } else {
-                            'B'
-                        }),
-                        PieceType::Knight => fen.push(if col.get_color() == PieceColor::Black {
-                            'n'
-                        } else {
-                            'N'
-                        }),
+                    let mut piece_character = match piece_type {
+                        PieceType::Rook => 'r',
+                        PieceType::Pawn(_) => 'p',
+                        PieceType::King => 'k',
+                        PieceType::Queen => 'q',
+                        PieceType::Bishop => 'b',
+                        PieceType::Knight => 'n',
+                    };
+
+                    if col.get_color() == PieceColor::White {
+                        piece_character = piece_character.to_ascii_uppercase();
                     }
+
+                    fen.push(piece_character);
                 } else {
                     space += 1;
                 }
@@ -427,8 +409,13 @@ impl BoardMap {
             }
         } else {
             let position_move = uci_move.1;
-
             let PositionMove { to, .. } = position_move;
+
+            let mut remove_en_passant_piece = false;
+
+            if let UciMoveType::Pawn { take, .. } = uci_move.0 {
+                remove_en_passant_piece = take && !self.get_piece(to).is_piece();
+            }
 
             self.is_valid_move(position_move)?;
             self.make_move(position_move);
@@ -436,6 +423,14 @@ impl BoardMap {
             match uci_move.0 {
                 UciMoveType::Pawn { promotion, .. } => {
                     self.handle_possible_en_passant(position_move);
+                    if remove_en_passant_piece {
+                        let shift = match self.get_active_color() {
+                            PieceColor::Black => 1,
+                            PieceColor::White => -1,
+                        };
+
+                        self.set_piece([((to[0] as i32) - shift) as usize, to[1]], 0);
+                    }
 
                     if let Some(piece_type) = promotion {
                         let value = piece_type.to_value() | self.get_active_color().to_value();
@@ -849,21 +844,19 @@ impl BoardMap {
         // only en passant moves can be moved diagonally on an empty square
         let PositionMove { from, to, .. } = piece_move;
         let piece = self.get_piece(from);
-        if let Some(piece_type) = piece.get_type() {
-            if let PieceType::Pawn(_) = piece_type {
-                let shift = match piece.get_color() {
-                    PieceColor::Black => 1,
-                    PieceColor::White => -1,
-                };
-                let step_pos = [(to[0] as isize - shift) as usize, to[1]];
-                let step_piece = self.get_piece(step_pos);
-                if step_piece.is_piece() && step_piece.get_color() != piece.get_color() {
-                    if let Some(step_piece_type) = step_piece.get_type() {
-                        if step_piece_type == PieceType::Pawn(false)
-                            || step_piece_type == PieceType::Pawn(true)
-                        {
-                            return true;
-                        }
+        if let Some(PieceType::Pawn(_)) = piece.get_type() {
+            let shift = match piece.get_color() {
+                PieceColor::Black => 1,
+                PieceColor::White => -1,
+            };
+            let step_pos = [(to[0] as isize - shift) as usize, to[1]];
+            let step_piece = self.get_piece(step_pos);
+            if step_piece.is_piece() && step_piece.get_color() != piece.get_color() {
+                if let Some(step_piece_type) = step_piece.get_type() {
+                    if step_piece_type == PieceType::Pawn(false)
+                        || step_piece_type == PieceType::Pawn(true)
+                    {
+                        return true;
                     }
                 }
             }
@@ -1031,7 +1024,7 @@ impl Debug for BoardMap {
         for i in 0..8 {
             writeln!(f, "{} {:?}", 8 - i, self.squares[i]).unwrap();
         }
-        writeln!(f, "   a   b   c   d   e   f   g   h").unwrap();
+        writeln!(f, "    a    b    c    d    e    f    g    h").unwrap();
         writeln!(f, "fen: {}", self.get_fen()).unwrap();
         writeln!(
             f,

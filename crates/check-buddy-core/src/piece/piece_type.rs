@@ -1,5 +1,4 @@
-use crate::piece::Piece;
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 
 pub const NONE: u32 = 0;
 pub const KING: u32 = 1;
