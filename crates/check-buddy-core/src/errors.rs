@@ -25,7 +25,9 @@ pub enum PieceMoveError {
 }
 
 #[derive(Error, Debug)]
-pub enum HistoricalMoveError {
+pub enum UciMoveError {
+    #[error("Couldn't convert string to digit: {0:}")]
+    DigitParseFailed(String),
     #[error("Can't parse uci move")]
     InvalidUciMove,
     #[error("Can't parse uci move type")]

@@ -22,6 +22,7 @@ pub enum UciMoveType {
     Default {
         piece_type: PieceType,
         specified_rank: bool,
+        specified_file: bool,
         take: bool,
         check: bool,
     },

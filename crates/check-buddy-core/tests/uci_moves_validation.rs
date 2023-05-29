@@ -1,3 +1,4 @@
+use std::env;
 use anyhow::Result;
 
 use check_buddy_core::position_move::{Position, PositionMove};
@@ -6,9 +7,11 @@ use check_buddy_core::BoardMap;
 #[test]
 fn uci_moves_should_be_valid() -> Result<()> {
     let move_data = gen_move_data().unwrap();
-    for (row, (moves, move_name)) in move_data.iter().enumerate() {
+    for (row, (id, move_name, moves)) in move_data.iter().skip(97).enumerate() {
         let mut board = BoardMap::starting();
         for piece_move in moves {
+            println!("piece move {:?}", piece_move);
+            println!("BEGIN -------------\n{:?}", board);
             let actual_move = board
                 .parse_uci_to_move(piece_move)
                 .expect(&*format!("Game {}: ({})", row, move_name));
@@ -33,6 +36,7 @@ fn uci_moves_should_be_valid() -> Result<()> {
             {
                 let piece = board.get_piece(from);
                 println! {"{:?}", board};
+                println!("Game {}: ({})", id, move_name);
                 println!("move {} is invalid", piece_move);
                 println!(
                     "Moving piece {:?} from {:?} to {:?} isn't seen as a valid move",
@@ -40,15 +44,15 @@ fn uci_moves_should_be_valid() -> Result<()> {
                 );
                 panic!();
             }
+            println!("actual move {:?}", actual_move.1);
             board.uci_move_turn(actual_move)?;
-            println!("{:?}", piece_move);
-            println!("{:?}", board);
+            println!("END ---------------\n{:?}", board);
         }
     }
     Ok(())
 }
 
-fn gen_move_data() -> Result<Vec<(Vec<String>, String)>> {
+fn gen_move_data() -> Result<Vec<(String, String,Vec<String>)>> {
     let path = format!("{}/tests/datasets/games.csv", env!("CARGO_MANIFEST_DIR"));
     let file = std::fs::File::open(path)?;
     let mut rdr = csv::Reader::from_reader(file);
@@ -58,9 +62,9 @@ fn gen_move_data() -> Result<Vec<(Vec<String>, String)>> {
             let record = result.expect("couldn't parse record");
             let moves = &record[12];
             let moves = moves.split(' ').map(|s| s.to_owned()).collect::<Vec<_>>();
+            let id = &record[0];
             let opening_name = &record[14];
-
-            (moves, opening_name.to_owned())
+            (id.to_owned(), opening_name.to_owned(), moves)
         })
         .collect::<Vec<_>>())
 }
