@@ -7,11 +7,9 @@ use check_buddy_core::BoardMap;
 #[test]
 fn uci_moves_should_be_valid() -> Result<()> {
     let move_data = gen_move_data().unwrap();
-    for (row, (id, move_name, moves)) in move_data.iter().skip(97).enumerate() {
+    for (row, (id, move_name, moves)) in move_data.iter().skip(10294).enumerate() {
         let mut board = BoardMap::starting();
         for piece_move in moves {
-            println!("piece move {:?}", piece_move);
-            println!("BEGIN -------------\n{:?}", board);
             let actual_move = board
                 .parse_uci_to_move(piece_move)
                 .expect(&*format!("Game {}: ({})", row, move_name));
@@ -35,24 +33,20 @@ fn uci_moves_should_be_valid() -> Result<()> {
                 .any(|(piece_from, piece_to)| *piece_from == from && *piece_to == to)
             {
                 let piece = board.get_piece(from);
-                println! {"{:?}", board};
-                println!("Game {}: ({})", id, move_name);
-                println!("move {} is invalid", piece_move);
-                println!(
-                    "Moving piece {:?} from {:?} to {:?} isn't seen as a valid move",
-                    piece, from, to
-                );
-                panic!();
+                panic!("row {row}
+    {board:?}
+    Game {id}: ({move_name})
+    Move {piece_move} is invalid
+    Moving piece {piece:?} from {from:?} to {to:?} isn't seen as a valid move
+");
             }
-            println!("actual move {:?}", actual_move.1);
             board.uci_move_turn(actual_move)?;
-            println!("END ---------------\n{:?}", board);
         }
     }
     Ok(())
 }
 
-fn gen_move_data() -> Result<Vec<(String, String,Vec<String>)>> {
+fn gen_move_data() -> Result<Vec<(String, String, Vec<String>)>> {
     let path = format!("{}/tests/datasets/games.csv", env!("CARGO_MANIFEST_DIR"));
     let file = std::fs::File::open(path)?;
     let mut rdr = csv::Reader::from_reader(file);

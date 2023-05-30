@@ -198,21 +198,22 @@ impl BoardMap {
             // Rbe8    x | 1 | x | 2
             // Rbxe8   x | 1 | 2 | 3
             // R1xe8   1 | x | 2 | 3
-
             let specified_rank = uci.len() > 3 &&
                 RANKS.contains(&uci.chars().nth(1).expect("couldnt get first char of uci")) &&
                 (
                     RANKS.contains(&uci.chars().nth(2).expect("couldnt get second char of uci")) ||
-                        RANKS.contains(&uci.chars().nth(3).expect("couldnt get third char of uci"))
+                        RANKS.contains(&uci.chars().nth(3).expect("couldnt get third char of uci")) ||
+                        (
+                            uci.len() > 4 &&
+                                RANKS.contains(&uci.chars().nth(4).expect("couldnt get third char of uci"))
+                        )
                 );
-            let specified_file = uci.len() > 3 &&
-                FILES.contains(&uci.chars().nth(1).expect("couldnt get first char of uci")) &&
-                (
-                    RANKS.contains(&uci.chars().nth(2).expect("couldnt get second char of uci")) ||
-                        RANKS.contains(&uci.chars().nth(3).expect("couldnt get third char of uci"))
-                );
-
-            println!("r {} f {}", specified_rank, specified_file);
+            let specified_file = uci.len() > 3 && (
+                FILES.contains(&uci.chars().nth(1).expect("couldnt get first char of uci")) ||
+                    (
+                        RANKS.contains(&uci.chars().nth(1).expect("couldnt get second char of uci")) &&
+                            FILES.contains(&uci.chars().nth(2).expect("couldnt get first char of uci")))
+            );
             let take = uci.chars().nth(1) == Some('x') || uci.chars().nth(2) == Some('x') || uci.chars().nth(3) == Some('x');
             let piece_type = match uci.chars().next().expect("Couldnt get next char of uci") {
                 'K' => PieceType::King,
@@ -337,7 +338,9 @@ impl BoardMap {
                 }
 
                 if specified_file {
-                    let specified_file = 7 - uci.chars().nth(1)
+                    let shift = if specified_rank { 2 } else { 1 };
+
+                    let specified_file = 7 - uci.chars().nth(shift)
                         .ok_or(anyhow!("can't pop last char of uci"))?
                         .to_string()
                         .parse::<usize>()?
@@ -804,7 +807,7 @@ impl BoardMap {
         } = position_move;
 
         if en_passant {
-            eprintln!("move is an en passant!");
+            // eprintln!("move is an en passant!");
             let shift = if self.get_piece(from).get_color() == PieceColor::Black {
                 -1
             } else {
