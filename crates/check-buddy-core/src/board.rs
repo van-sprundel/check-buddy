@@ -91,7 +91,6 @@ impl BoardMap {
     pub fn get_fen(&self) -> String {
         let mut fen = String::new();
         let mut squares = self.squares;
-        squares.reverse();
         for row in squares {
             let mut space = 0;
             for col in row {
@@ -541,11 +540,10 @@ impl BoardMap {
     /// generate only legal move positions for piece
     pub fn gen_legal_positions(&self, from: Position) -> Vec<Position> {
         let mut temp_board = *self;
-        let moves = temp_board.gen_to_positions(from);
-        let mut legal_moves = vec![];
-        // eprintln!("moves {:?}", &moves);
+        let positions = temp_board.gen_to_positions(from);
+        let mut legal_positions = vec![];
 
-        for to in moves.into_iter() {
+        for to in positions.into_iter() {
             let position_move = PositionMove::new(from, to);
             let en_passant = self.is_en_passant(position_move);
             let promotion = self.is_promotion(position_move);
@@ -559,22 +557,22 @@ impl BoardMap {
             };
             temp_board.make_move(position_move);
             let next_moves = temp_board.gen_all_opponent_positions();
-            // eprintln!("next possible moves: {:?}", next_moves);
             if !next_moves.iter().any(|x| {
                 let next_piece = temp_board.squares[x[0]][x[1]];
                 if next_piece.is_piece() && next_piece.get_color() == temp_board.active_color {
                     // eprintln!("{:?}", next_piece);
+
                     return Some(PieceType::King) == next_piece.get_type();
                 }
                 false
             }) {
-                legal_moves.push(to);
+                legal_positions.push(to);
             }
 
             temp_board.undo_move(position_move, last_piece);
         }
-        // eprintln!("legal moves {:?}", &legal_moves);
-        legal_moves
+        // eprintln!("legal positions {:?} {:?}", &from, &legal_positions);
+        legal_positions
     }
     /// generate all possible moves for piece
     pub fn gen_to_positions(&self, from: Position) -> Vec<Position> {
@@ -805,15 +803,14 @@ impl BoardMap {
             en_passant,
             promotion,
         } = position_move;
-
         if en_passant {
-            // eprintln!("move is an en passant!");
+            // eprintln!("move is an en passant! {from:?} {to:?}");
             let shift = if self.get_piece(from).get_color() == PieceColor::Black {
-                -1
-            } else {
                 1
+            } else {
+                -1
             };
-            let to_step = [(to[0] as isize + shift) as usize, to[1]];
+            let to_step = [(to[0] as isize - shift) as usize, to[1]];
             // if to_step[0] != 0 && to_step[1] != 0  && to_step[0] != 8 {
             self.set_piece(to_step, 0);
             // }
@@ -859,9 +856,9 @@ impl BoardMap {
             for file in 0..8 {
                 let piece = self.squares[rank][file];
                 if piece.is_piece() && piece.get_color() != self.active_color {
-                    // eprintln!("found enemy piece! {:?}", piece);
-                    let moves = self.gen_to_positions([rank, file]);
-                    opponent_positions.extend(moves);
+                    // eprintln!("found enemy piece! {:?}", moves);
+                    let positions = self.gen_to_positions([rank, file]);
+                    opponent_positions.extend(positions);
                 }
             }
         }
