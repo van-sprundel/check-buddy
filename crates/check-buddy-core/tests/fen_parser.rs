@@ -35,22 +35,22 @@ fn complex_fen_to_board() {
 fn board_to_fen() {
     let eventual_fen = "4k2N/1qq5/p4b2/1B6/3R2B1/1n2BqP1/8/2QK2r1";
     let mut board = BoardMap::empty();
-    board.set_piece([7, 4], KING | BLACK);
-    board.set_piece([7, 7], KNIGHT | WHITE);
-    board.set_piece([6, 1], QUEEN | BLACK);
-    board.set_piece([6, 2], QUEEN | BLACK);
-    board.set_piece([5, 0], PAWN | BLACK);
-    board.set_piece([5, 5], BISHOP | BLACK);
-    board.set_piece([4, 1], BISHOP | WHITE);
-    board.set_piece([3, 3], ROOK | WHITE);
-    board.set_piece([3, 6], BISHOP | WHITE);
-    board.set_piece([2, 1], KNIGHT | BLACK);
-    board.set_piece([2, 4], BISHOP | WHITE);
-    board.set_piece([2, 5], QUEEN | BLACK);
-    board.set_piece([2, 6], PAWN | WHITE);
-    board.set_piece([0, 2], QUEEN | WHITE);
-    board.set_piece([0, 3], KING | WHITE);
-    board.set_piece([0, 6], ROOK | BLACK);
+    board.set_piece([0, 4], KING | BLACK);
+    board.set_piece([0, 7], KNIGHT | WHITE);
+    board.set_piece([1, 1], QUEEN | BLACK);
+    board.set_piece([1, 2], QUEEN | BLACK);
+    board.set_piece([2, 0], PAWN | BLACK);
+    board.set_piece([2, 5], BISHOP | BLACK);
+    board.set_piece([3, 1], BISHOP | WHITE);
+    board.set_piece([4, 3], ROOK | WHITE);
+    board.set_piece([4, 6], BISHOP | WHITE);
+    board.set_piece([5, 1], KNIGHT | BLACK);
+    board.set_piece([5, 4], BISHOP | WHITE);
+    board.set_piece([5, 5], QUEEN | BLACK);
+    board.set_piece([5, 6], PAWN | WHITE);
+    board.set_piece([7, 2], QUEEN | WHITE);
+    board.set_piece([7, 3], KING | WHITE);
+    board.set_piece([7, 6], ROOK | BLACK);
     let generated_fen = board.get_fen();
     assert_eq!(eventual_fen, generated_fen);
 }
