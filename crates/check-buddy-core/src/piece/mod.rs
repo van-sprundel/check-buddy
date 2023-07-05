@@ -35,8 +35,7 @@ impl Piece {
         (16..24).contains(&(self.0 % 32))
     }
     pub fn is_piece(&self) -> bool {
-        // self.0 != 0 && self.0 != WHITE && self.0 != BLACK
-        self.get_type().is_some() && self.0 != WHITE && self.0 != BLACK
+        self.get_type().is_some()
     }
 
     pub fn get_icon(&self) -> Option<&str> {
