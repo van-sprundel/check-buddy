@@ -1,35 +1,38 @@
-use std::env;
 use anyhow::Result;
+use std::env;
 
-use check_buddy_core::position_move::{Position, PositionMove};
+use check_buddy_core::position_move::PositionMove;
 use check_buddy_core::BoardMap;
 
 #[test]
 fn uci_moves_should_be_valid() -> Result<()> {
     let move_data = gen_move_data().unwrap();
-    for (row, (id, move_name, moves)) in move_data.iter().skip(10544).enumerate() {
+    for (row, (id, move_name, moves)) in move_data.iter().enumerate() {
         let mut board = BoardMap::starting();
         for piece_move in moves {
-            let actual_move = board
-                .parse_uci_to_move(piece_move)
-                .expect(&*format!("Game {}: ({})", row, move_name));
+            let actual_move = board.parse_uci_to_move(piece_move).expect(&*format!(
+                "
+    Row {row}
+    Game {id}: ({move_name})
+"
+            ));
             let uci_move = actual_move.0;
             let PositionMove { from, to, .. } = actual_move.1;
             let positions = board.gen_legal_positions(from);
 
-            if !positions
-                .iter()
-                .any(|piece_to| *piece_to == to)
-            {
+            if !positions.iter().any(|piece_to| *piece_to == to) {
                 let piece = board.get_piece(from);
-                panic!("row {row}
+                panic!(
+                    "
 {board:?}
+    row {row}
     Game {id}: ({move_name})
     Uci {uci_move:?} is invalid
     Move {piece_move} is invalid
     Moving piece {piece:?} from {from:?} to {to:?} isn't seen as a valid move
     Legal positions: {positions:?}
-");
+"
+                );
             }
             board.uci_move_turn(actual_move)?;
         }
