@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Error, Result};
 use calamine::*;
-use check_buddy_core::piece_move::Position;
+use check_buddy_core::position_move::Position;
 use check_buddy_core::BoardMap;
 use std::ops::Sub;
 
@@ -70,7 +70,7 @@ fn to_position(piece_move: &str) -> Result<Position> {
 
     let rank = (piece_move.pop().ok_or(anyhow!("can't parse"))? as usize).sub(97);
 
-    let file = piece_move
+    let file = 7 - piece_move
         .pop()
         .ok_or(anyhow!("can't parse"))?
         .to_string()

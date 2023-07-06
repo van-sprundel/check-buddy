@@ -1,8 +1,8 @@
 [package]
-name = "check-buddy-gui"
+name = "check-buddy-pgn-parser"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 check-buddy-core = { path = "../check-buddy-core" }
-macroquad = "0.3"
+anyhow = "1.0"

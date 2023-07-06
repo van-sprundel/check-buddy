@@ -1,6 +1,6 @@
 [package]
 name = "check-buddy"
-description = "Check buddy is a chess engine"
+description = "A WIP chess engine written in Rust."
 license-file = "LICENSE.md"
 version = "0.1.0"
 edition = "2021"

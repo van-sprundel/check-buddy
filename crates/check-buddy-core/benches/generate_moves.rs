@@ -6,7 +6,7 @@ fn generate_moves(c: &mut Criterion) {
     let board = BoardMap::starting();
     let mut group = c.benchmark_group("generate_moves");
     group.bench_function("single_move", |b| {
-        b.iter(|| board.gen_moves(black_box([0, 0])))
+        b.iter(|| board.gen_to_positions(black_box([0, 0])))
     });
     group.bench_function("opponent_moves", |b| {
         b.iter(|| board.gen_all_opponent_positions())
@@ -15,7 +15,7 @@ fn generate_moves(c: &mut Criterion) {
         b.iter(|| {
             (0..8).flat_map(|rank| {
                 (0..8)
-                    .map(|file| board.gen_moves(black_box([rank, file])))
+                    .map(|file| board.gen_to_positions(black_box([rank, file])))
                     .collect::<Vec<_>>()
             })
         })

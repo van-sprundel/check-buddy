@@ -1,13 +1,9 @@
-use anyhow::{anyhow, Result};
-use check_buddy_core::piece_move::PieceMove;
-use check_buddy_core::piece_type::PieceType;
 use check_buddy_core::BoardMap;
 use std::io;
 use std::io::Write;
-use std::ops::Sub;
 
 fn main() {
-    let mut board = BoardMap::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    let mut board = BoardMap::starting();
     let mut buffer = String::new();
     let mut stdout = io::stdout();
 
@@ -21,11 +17,11 @@ fn main() {
         stdin.read_line(&mut buffer).unwrap();
         buffer.retain(|c| !c.is_whitespace());
 
-        if let Ok(piece_move) = board.parse_move(&buffer) {
-            println!("{:?}", piece_move);
-            board.move_turn(piece_move);
-        } else {
-            println!("no move :(");
+        match board.parse_uci_to_move(&buffer) {
+            Ok(uci_move) => {
+                let _ = board.uci_move_turn(uci_move);
+            }
+            Err(e) => println!("{}", e),
         }
     }
 }

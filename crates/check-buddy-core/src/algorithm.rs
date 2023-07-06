@@ -1,6 +1,7 @@
 #![allow(unused_must_use)]
-use crate::piece_move::PieceMove;
-use crate::{BoardMap, PieceColor};
+use crate::piece_color::PieceColor;
+use crate::position_move::PositionMove;
+use crate::BoardMap;
 use rand::Rng;
 
 #[derive(Default, Clone)]
@@ -10,17 +11,17 @@ impl ChessEngine {
     const MIN: f32 = -1000.;
     const MAX: f32 = 1000.;
 
-    pub fn find_best_move_minimax_ab(&mut self, board: BoardMap, depth: usize) -> PieceMove {
+    pub fn find_best_move_minimax_ab(&mut self, board: BoardMap, depth: usize) -> PositionMove {
         let mut best_value = Self::MIN;
         let mut best_moves = vec![];
         for from in board.get_active_pieces() {
             let moves = board.gen_legal_positions(from);
             for to in moves {
-                let piece_move = PieceMove::new(from, to);
+                let piece_move = PositionMove::new(from, to);
                 let piece_value = board.get_piece(from).0;
                 let mut temp_board = board;
 
-                temp_board.move_turn(piece_move);
+                temp_board.single_move_turn(piece_move);
                 let move_value =
                     self.ab_max(depth, temp_board, ChessEngine::MIN, ChessEngine::MAX, true);
                 temp_board.undo_move(piece_move, piece_value);
@@ -49,17 +50,17 @@ impl ChessEngine {
         best_moves[index]
     }
 
-    pub fn find_best_move_negamax(&mut self, board: BoardMap, depth: usize) -> PieceMove {
+    pub fn find_best_move_negamax(&mut self, board: BoardMap, depth: usize) -> PositionMove {
         let mut best_value = Self::MIN;
         let mut best_moves = vec![];
         for from in board.get_active_pieces() {
             let moves = board.gen_legal_positions(from);
             for to in moves {
-                let piece_move = PieceMove::new(from, to);
+                let piece_move = PositionMove::new(from, to);
                 let piece_value = board.get_piece(from).0;
 
                 let mut temp_board = board;
-                temp_board.move_turn(piece_move);
+                temp_board.single_move_turn(piece_move);
                 let move_value = self.nega_max(temp_board, depth);
                 temp_board.undo_move(piece_move, piece_value);
 
@@ -96,7 +97,7 @@ impl ChessEngine {
         mut beta: f32,
         is_maximizing_player: bool,
     ) -> f32 {
-        return if is_maximizing_player {
+        if is_maximizing_player {
             // AB MAX
             if depth == 0 {
                 return self.evaluate(board);
@@ -108,7 +109,7 @@ impl ChessEngine {
 
                 let piece_value = board.get_piece(piece_move.from).0;
 
-                temp_board.move_turn(*piece_move);
+                temp_board.single_move_turn(*piece_move);
                 let score = self.ab_max(depth - 1, temp_board, alpha, beta, !is_maximizing_player);
                 temp_board.undo_move(*piece_move, piece_value);
 
@@ -132,7 +133,7 @@ impl ChessEngine {
 
                 let piece_value = board.get_piece(piece_move.from).0;
 
-                temp_board.move_turn(*piece_move);
+                temp_board.single_move_turn(*piece_move);
                 let score = self.ab_max(depth - 1, temp_board, alpha, beta, !is_maximizing_player);
                 temp_board.undo_move(*piece_move, piece_value);
 
@@ -144,7 +145,7 @@ impl ChessEngine {
                 }
             }
             beta
-        };
+        }
     }
 
     fn nega_max(&mut self, board: BoardMap, depth: usize) -> f32 {
@@ -156,7 +157,7 @@ impl ChessEngine {
 
         for piece_move in moves.iter() {
             let mut temp_board = board;
-            temp_board.move_turn(*piece_move);
+            temp_board.single_move_turn(*piece_move);
 
             let value = -self.nega_max(board, depth - 1);
             if value > max {
