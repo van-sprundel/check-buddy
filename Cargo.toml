@@ -1,5 +1,5 @@
 [workspace]
-members = ["check-buddy-*", "examples/*"]
+members = ["check-buddy-*"]
 default-members = ["check-buddy-*"]
 exclude = ["assets/", ".github/"]
 resolver = "2"
