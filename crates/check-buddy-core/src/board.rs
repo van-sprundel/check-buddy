@@ -18,8 +18,8 @@ const FILES: [char; 8] = ['1', '2', '3', '4', '5', '6', '7', '8'];
 pub struct BoardMap {
     squares: [[Piece; 8]; 8],
     active_color: PieceColor,
-    black_can_castle: bool,
-    white_can_castle: bool,
+    black_king_moved: bool,
+    white_king_moved: bool,
 }
 
 impl Default for BoardMap {
@@ -29,8 +29,8 @@ impl Default for BoardMap {
         Self {
             squares,
             active_color: PieceColor::White,
-            black_can_castle: true,
-            white_can_castle: true,
+            black_king_moved: false,
+            white_king_moved: false,
         }
     }
 }
@@ -479,9 +479,9 @@ impl BoardMap {
                 UciMoveType::Default { piece_type, .. } => {
                     if piece_type == PieceType::King {
                         if self.get_active_color() == &PieceColor::White {
-                            self.white_can_castle = false;
+                            self.white_king_moved = false;
                         } else {
-                            self.black_can_castle = false;
+                            self.black_king_moved = false;
                         }
                     }
                 }
@@ -661,25 +661,19 @@ impl BoardMap {
             }
         }
 
-        //castling
-        if self.get_active_color() == &PieceColor::Black && self.black_can_castle {
-            //TODO check if any pieces in the way
-            let possible_king = self.get_piece([0, 4]);
-            if possible_king.is_piece()
-                && possible_king.is_black()
-                && possible_king.get_type().unwrap() == PieceType::King
-            {
+        // castling
+        if self.get_active_color() == &PieceColor::Black {
+            if self.black_can_short_castle() {
                 positions.push([0, 6]);
+            }
+            if self.black_can_long_castle() {
                 positions.push([0, 2]);
             }
-        } else if self.get_active_color() == &PieceColor::White && self.white_can_castle {
-            //TODO check if any pieces in the way
-            let possible_king = self.get_piece([7, 4]);
-            if possible_king.is_piece()
-                && possible_king.is_white()
-                && possible_king.get_type().unwrap() == PieceType::King
-            {
+        } else if self.get_active_color() == &PieceColor::White {
+            if self.white_can_short_castle() {
                 positions.push([7, 6]);
+            }
+            if self.white_can_long_castle() {
                 positions.push([7, 2]);
             }
         }
@@ -1075,6 +1069,70 @@ impl BoardMap {
             }
         }
         positions
+    }
+
+    fn black_can_long_castle(&self) -> bool {
+        if self.black_king_moved {
+            return false;
+        }
+        //TODO can be removed if single move turn supports castling
+        let possible_king = self.get_piece([0, 4]);
+        if possible_king.is_piece()
+            && possible_king.is_black()
+            && possible_king.get_type().unwrap() == PieceType::King
+        {
+            let row = self.squares[0];
+            return row[1..4].iter().all(|p| !p.is_piece());
+        }
+        return false;
+    }
+
+    fn black_can_short_castle(&self) -> bool {
+        if self.black_king_moved {
+            return false;
+        }
+        //TODO can be removed if single move turn supports castling
+        let possible_king = self.get_piece([0, 4]);
+        if possible_king.is_piece()
+            && possible_king.is_black()
+            && possible_king.get_type().unwrap() == PieceType::King
+        {
+            let row = self.squares[0];
+            return row[5..7].iter().all(|p| !p.is_piece());
+        }
+        return false;
+    }
+
+    fn white_can_long_castle(&self) -> bool {
+        if self.white_king_moved {
+            return false;
+        }
+        //TODO can be removed if single move turn supports castling
+        let possible_king = self.get_piece([7, 4]);
+        if possible_king.is_piece()
+            && possible_king.is_white()
+            && possible_king.get_type().unwrap() == PieceType::King
+        {
+            let row = self.squares[7];
+            return row[1..4].iter().all(|p| !p.is_piece());
+        }
+        return false;
+    }
+
+    fn white_can_short_castle(&self) -> bool {
+        if self.white_king_moved {
+            return false;
+        }
+        //TODO can be removed if single move turn supports castling
+        let possible_king = self.get_piece([7, 4]);
+        if possible_king.is_piece()
+            && possible_king.is_white()
+            && possible_king.get_type().unwrap() == PieceType::King
+        {
+            let row = self.squares[7];
+            return row[5..7].iter().all(|p| !p.is_piece());
+        }
+        return false;
     }
 }
 
