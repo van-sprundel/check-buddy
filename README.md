@@ -15,8 +15,9 @@
 - [x] next move check
 - [x] illegal moves
 - [x] en passant
+- [x] castling
 - [ ] pawn trade
 - [ ] win check
-- [ ] fem string
+- [x] FEN string
   - [x] from
-  - [ ] to
+  - [x] to
