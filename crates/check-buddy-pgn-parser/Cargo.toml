@@ -2,11 +2,11 @@
 name = "check-buddy-pgn-parser"
 description = "The PGN parser for check buddy"
 license-file = "LICENSE.md"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Ramon van Sprundel <ramonvansprundel@gmail.com>"]
 categories = ["chess", "chess-engine"]
 
 [dependencies]
-check-buddy-core = { version="0.2.1", path = "../check-buddy-core" }
+check-buddy-core = { version="0.2.2", path = "../check-buddy-core" }
 anyhow = "1.0"
