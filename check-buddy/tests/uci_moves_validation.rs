@@ -10,12 +10,14 @@ fn uci_moves_should_be_valid() -> Result<()> {
     for (row, (id, move_name, moves)) in move_data.iter().enumerate() {
         let mut board = BoardMap::starting();
         for piece_move in moves {
-            let actual_move = board.parse_uci_to_move(piece_move).expect(&*format!(
-                "
+            let actual_move = board.parse_uci_to_move(piece_move).unwrap_or_else(|_| {
+                panic!(
+                    "
     Row {row}
     Game {id}: ({move_name})
 "
-            ));
+                )
+            });
             let uci_move = actual_move.0;
             let PositionMove { from, to, .. } = actual_move.1;
             let positions = board.gen_legal_positions(from);
