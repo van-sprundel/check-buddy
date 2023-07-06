@@ -1,5 +1,5 @@
-use check_buddy_core::piece_type::PieceType;
-use check_buddy_core::BoardMap;
+use check_buddy::piece_type::PieceType;
+use check_buddy::BoardMap;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 fn generate_moves(c: &mut Criterion) {
