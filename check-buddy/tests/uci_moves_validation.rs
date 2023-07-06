@@ -1,8 +1,8 @@
 use anyhow::Result;
 use std::env;
 
-use check_buddy_core::position_move::PositionMove;
-use check_buddy_core::BoardMap;
+use check_buddy::position_move::PositionMove;
+use check_buddy::BoardMap;
 
 #[test]
 fn uci_moves_should_be_valid() -> Result<()> {

@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Error, Result};
 use calamine::*;
-use check_buddy_core::position_move::Position;
-use check_buddy_core::BoardMap;
+use check_buddy::position_move::Position;
+use check_buddy::BoardMap;
 use std::ops::Sub;
 
 #[test]

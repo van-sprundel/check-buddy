@@ -1,6 +1,6 @@
-use check_buddy_core::piece_type::{BISHOP, BLACK, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE};
-use check_buddy_core::position_move::Position;
-use check_buddy_core::{BoardMap, Piece};
+use check_buddy::piece_type::{BISHOP, BLACK, KING, KNIGHT, PAWN, QUEEN, ROOK, WHITE};
+use check_buddy::position_move::Position;
+use check_buddy::{BoardMap, Piece};
 
 #[test]
 fn fen_to_board() {
