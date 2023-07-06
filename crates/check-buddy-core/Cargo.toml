@@ -2,7 +2,7 @@
 name = "check-buddy-core"
 description = "The core system of check buddy, a chess engine"
 license-file = "LICENSE.md"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["Ramon van Sprundel <ramonvansprundel@gmail.com>"]
 categories = ["chess", "chess-engine"]

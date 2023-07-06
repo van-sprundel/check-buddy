@@ -291,14 +291,14 @@ checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
 
 [[package]]
 name = "check-buddy"
-version = "0.2.1"
+version = "0.2.3"
 dependencies = [
  "check-buddy-core",
 ]
 
 [[package]]
 name = "check-buddy-core"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "calamine",
@@ -310,7 +310,7 @@ dependencies = [
 
 [[package]]
 name = "check-buddy-gui"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "check-buddy-core",
  "macroquad",
@@ -318,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "check-buddy-pgn-parser"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "check-buddy-core",
@@ -326,7 +326,7 @@ dependencies = [
 
 [[package]]
 name = "check-buddy-wgpu"
-version = "0.1.0"
+version = "0.2.3"
 dependencies = [
  "cfg-if",
  "console_error_panic_hook",
