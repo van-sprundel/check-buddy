@@ -572,9 +572,9 @@ impl BoardMap {
             let next_moves = temp_board.gen_all_opponent_positions();
             if !next_moves.iter().any(|m| {
                 let next_piece = temp_board.squares[m[0]][m[1]];
-                return next_piece.is_piece()
+                next_piece.is_piece()
                     && next_piece.get_color() == temp_board.active_color
-                    && Some(PieceType::King) == next_piece.get_type();
+                    && Some(PieceType::King) == next_piece.get_type()
             }) {
                 legal_positions.push(to);
             }
@@ -883,20 +883,16 @@ impl BoardMap {
             return false;
         }
         let piece = self.get_piece(from);
-        if let Some(piece_type) = piece.get_type() {
-            if let PieceType::Pawn(_) = piece_type {
-                let shift = match piece.get_color() {
-                    PieceColor::Black => 1,
-                    PieceColor::White => -1,
-                };
-                let step_pos = [(to[0] as isize - shift) as usize, to[1]];
-                let step_piece = self.get_piece(step_pos);
-                if step_piece.is_piece() && step_piece.get_color() != piece.get_color() {
-                    if let Some(step_piece_type) = step_piece.get_type() {
-                        if let PieceType::Pawn(_) = step_piece_type {
-                            return true;
-                        }
-                    }
+        if let Some(PieceType::Pawn(_)) = piece.get_type() {
+            let shift = match piece.get_color() {
+                PieceColor::Black => 1,
+                PieceColor::White => -1,
+            };
+            let step_pos = [(to[0] as isize - shift) as usize, to[1]];
+            let step_piece = self.get_piece(step_pos);
+            if step_piece.is_piece() && step_piece.get_color() != piece.get_color() {
+                if let Some(PieceType::Pawn(_)) = step_piece.get_type() {
+                    return true;
                 }
             }
         }
@@ -1084,7 +1080,7 @@ impl BoardMap {
             let row = self.squares[0];
             return row[1..4].iter().all(|p| !p.is_piece());
         }
-        return false;
+        false
     }
 
     fn black_can_short_castle(&self) -> bool {
@@ -1100,7 +1096,7 @@ impl BoardMap {
             let row = self.squares[0];
             return row[5..7].iter().all(|p| !p.is_piece());
         }
-        return false;
+        false
     }
 
     fn white_can_long_castle(&self) -> bool {
@@ -1116,7 +1112,7 @@ impl BoardMap {
             let row = self.squares[7];
             return row[1..4].iter().all(|p| !p.is_piece());
         }
-        return false;
+        false
     }
 
     fn white_can_short_castle(&self) -> bool {
@@ -1132,7 +1128,7 @@ impl BoardMap {
             let row = self.squares[7];
             return row[5..7].iter().all(|p| !p.is_piece());
         }
-        return false;
+        false
     }
 }
 
