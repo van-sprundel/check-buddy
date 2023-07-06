@@ -2,7 +2,7 @@
 name = "check-buddy"
 description = "A WIP chess engine written in Rust."
 license-file = "LICENSE.md"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Ramon van Sprundel <ramonvansprundel@gmail.com>"]
 categories = ["chess", "chess-engine", "gui"]
