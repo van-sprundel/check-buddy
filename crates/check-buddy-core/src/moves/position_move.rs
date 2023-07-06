@@ -1,12 +1,12 @@
 #[derive(Default, Clone, Copy, Debug)]
-pub struct PieceMove {
+pub struct PositionMove {
     pub from: Position,
     pub to: Position,
     pub en_passant: bool,
-    pub trade: bool,
+    pub promotion: bool,
 }
 
-impl PieceMove {
+impl PositionMove {
     pub fn new(from: Position, to: Position) -> Self {
         Self {
             from,

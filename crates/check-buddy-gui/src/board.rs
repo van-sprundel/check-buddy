@@ -1,9 +1,8 @@
 use crate::states::PointerState;
-use check_buddy_core::piece_move::{PieceMove, Position};
-use check_buddy_core::{BoardMap, Piece, PieceColor};
+use check_buddy_core::position_move::{Position, PositionMove};
+use check_buddy_core::{BoardMap, Piece};
 use macroquad::prelude::*;
 use std::collections::HashMap;
-use check_buddy_core::piece_type::PieceType;
 
 #[derive(Default)]
 pub struct Board {
@@ -61,7 +60,8 @@ impl Board {
             return;
         }
         let possible_piece = self.board_map.get_piece([y, x]);
-        if possible_piece.is_piece() && possible_piece.get_color() == *self.get_active_color()
+        if possible_piece.is_piece()
+            && possible_piece.get_color() == *self.board_map.get_active_color()
         {
             self.selected_piece = Some(possible_piece);
             self.selected_piece_position = Some([y, x]);
@@ -82,8 +82,9 @@ impl Board {
 
             if let Some(positions) = self.selected_piece_move_positions.clone() {
                 if positions.contains(&[y, x]) {
-                    let piece_move = PieceMove::new(self.selected_piece_position.unwrap(), [y, x]);
-                    match self.board_map.move_turn(piece_move) {
+                    let piece_move =
+                        PositionMove::new(self.selected_piece_position.unwrap(), [y, x]);
+                    match self.board_map.single_move_turn(piece_move) {
                         Ok(_) => {}
                         Err(e) => println!("Invalid move! ({})", e),
                     }
@@ -183,23 +184,5 @@ impl Board {
                 ..Default::default()
             },
         )
-    }
-
-    pub fn get_icon(&self) -> Option<&str> {
-        self.get_type()
-            .map(|piece_type| match (piece_type, self.get_color().unwrap()) {
-                (PieceType::Rook, PieceColor::White) => "sprites/white_rook.png",
-                (PieceType::Pawn(_), PieceColor::White) => "sprites/white_pawn.png",
-                (PieceType::Bishop, PieceColor::White) => "sprites/white_bishop.png",
-                (PieceType::Queen, PieceColor::White) => "sprites/white_queen.png",
-                (PieceType::King, PieceColor::White) => "sprites/white_king.png",
-                (PieceType::Knight, PieceColor::White) => "sprites/white_knight.png",
-                (PieceType::Rook, PieceColor::Black) => "sprites/black_rook.png",
-                (PieceType::Pawn(_), PieceColor::Black) => "sprites/black_pawn.png",
-                (PieceType::Bishop, PieceColor::Black) => "sprites/black_bishop.png",
-                (PieceType::Queen, PieceColor::Black) => "sprites/black_queen.png",
-                (PieceType::King, PieceColor::Black) => "sprites/black_king.png",
-                (PieceType::Knight, PieceColor::Black) => "sprites/black_knight.png",
-            })
     }
 }

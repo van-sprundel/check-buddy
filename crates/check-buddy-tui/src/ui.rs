@@ -1,6 +1,6 @@
 use crate::app::App;
+use check_buddy_core::piece_color::PieceColor;
 use check_buddy_core::piece_type::PieceType;
-use check_buddy_core::PieceColor;
 use tui::backend::Backend;
 use tui::layout::{Alignment, Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -53,7 +53,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         let piece = app.board_map.get_piece([col, row]);
 
         if piece.is_piece() {
-            let piece_color = match piece.get_color().unwrap() {
+            let piece_color = match piece.get_color() {
                 PieceColor::Black => 'B',
                 PieceColor::White => 'W',
             };

@@ -55,9 +55,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
                     KeyCode::Left => app.previous(),
                     KeyCode::Enter => {
                         let text = app.input.drain(..).collect::<String>();
-                        match app.board_map.parse_move(&text) {
+                        match app.board_map.parse_uci_to_move(&text) {
                             Ok(piece_move) => {
-                                if app.board_map.move_turn(piece_move).is_ok() {
+                                if app.board_map.uci_move_turn(piece_move).is_ok() {
                                     app.move_history.push(text);
                                 }
                             }

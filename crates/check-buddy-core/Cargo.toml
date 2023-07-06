@@ -2,7 +2,7 @@
 name = "check-buddy-core"
 description = "The core system of check buddy, a chess engine"
 license-file = "LICENSE.md"
-version = "0.1.0"
+version = "0.2.3"
 edition = "2021"
 authors = ["Ramon van Sprundel <ramonvansprundel@gmail.com>"]
 categories = ["chess", "chess-engine"]
@@ -13,7 +13,7 @@ anyhow = "1"
 thiserror = "1"
 
 [dev-dependencies]
-criterion = "0.4"
+criterion = "0.5"
 calamine = "0.19"
 csv = "1.1"
 
