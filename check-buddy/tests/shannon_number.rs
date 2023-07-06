@@ -1,22 +1,27 @@
-use check_buddy_core::position_move::{Position, PositionMove};
-use check_buddy_core::BoardMap;
+use check_buddy::position_move::{Position, PositionMove};
+use check_buddy::BoardMap;
 
 const SHANNON_TABLE: [usize; 6] = [20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
 
 #[test]
 fn move_integration_test_should_return_valid_move_count_on_depth_one() {
     let board_map = BoardMap::starting();
-    assert_eq!(20, move_integration(board_map, 1, 1));
+    assert_eq!(20, move_integration(board_map, 1));
 }
 
 #[test]
 fn move_integration_test_should_match_shannon_number() {
     //currently layer 5 takes longer than 60 seconds
-    move_integration(BoardMap::starting(), 0, 3);
+    for depth in 1..=5 {
+        assert_eq!(
+            SHANNON_TABLE[depth - 1],
+            move_integration(BoardMap::starting(), depth)
+        );
+    }
 }
 
-fn move_integration(board_map: BoardMap, depth: usize, max: usize) -> usize {
-    if depth + 1 == max {
+fn move_integration(board_map: BoardMap, depth: usize) -> usize {
+    if depth == 0 {
         return 1;
     }
 
@@ -47,11 +52,9 @@ fn move_integration(board_map: BoardMap, depth: usize, max: usize) -> usize {
             })
             .is_ok()
         {
-            num_moves += move_integration(board_map, depth + 1, max);
+            num_moves += move_integration(board_map, depth - 1);
         }
     }
-
-    assert_eq!(SHANNON_TABLE[max - depth - 2], num_moves);
 
     num_moves
 }
