@@ -7,9 +7,9 @@ impl PgnParser {
     pub fn parse(buffer: String) -> Result<Game> {
         let mut game = Game::default();
 
-        #[cfg(target_os = "macos")]
+        #[cfg(target_family = "unix")]
         let empty_line = "\n\n";
-        #[cfg(target_os = "windows")]
+        #[cfg(target_family = "windows")]
         let empty_line = "\r\n\r\n";
 
         let (info, uci) = buffer
@@ -67,9 +67,9 @@ mod tests {
 
     fn get_example_pgn() -> Vec<u8> {
         let mut path = std::env::current_dir().unwrap();
-        #[cfg(target_os = "macos")]
+        #[cfg(target_family = "unix")]
         path.push("assets/pgns/example.pgn");
-        #[cfg(target_os = "windows")]
+        #[cfg(target_family = "windows")]
         path.push("assets\\pgns\\example.pgn");
 
         std::fs::read(path).unwrap()
