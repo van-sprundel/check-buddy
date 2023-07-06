@@ -6,22 +6,17 @@ const SHANNON_TABLE: [usize; 6] = [20, 400, 8_902, 197_281, 4_865_609, 119_060_3
 #[test]
 fn move_integration_test_should_return_valid_move_count_on_depth_one() {
     let board_map = BoardMap::starting();
-    assert_eq!(20, move_integration(board_map, 1));
+    assert_eq!(20, move_integration(board_map, 1, 1));
 }
 
 #[test]
 fn move_integration_test_should_match_shannon_number() {
     //currently layer 5 takes longer than 60 seconds
-    for depth in 1..=5 {
-        assert_eq!(
-            SHANNON_TABLE[depth - 1],
-            move_integration(BoardMap::starting(), depth)
-        );
-    }
+    move_integration(BoardMap::starting(), 0, 3);
 }
 
-fn move_integration(board_map: BoardMap, depth: usize) -> usize {
-    if depth == 0 {
+fn move_integration(board_map: BoardMap, depth: usize, max: usize) -> usize {
+    if depth + 1 == max {
         return 1;
     }
 
@@ -52,9 +47,11 @@ fn move_integration(board_map: BoardMap, depth: usize) -> usize {
             })
             .is_ok()
         {
-            num_moves += move_integration(board_map, depth - 1);
+            num_moves += move_integration(board_map, depth + 1, max);
         }
     }
+
+    assert_eq!(SHANNON_TABLE[max - depth - 2], num_moves);
 
     num_moves
 }

@@ -1,6 +1,6 @@
 [package]
-name = "check-buddy-core"
-description = "The core system of check buddy, a chess engine"
+name = "check-buddy"
+description = "The main system of check buddy"
 license-file = "LICENSE.md"
 version = "0.2.3"
 edition = "2021"

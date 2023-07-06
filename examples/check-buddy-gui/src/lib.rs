@@ -2,7 +2,7 @@ pub(crate) mod board;
 pub(crate) mod states;
 
 use crate::board::Board;
-use check_buddy_core::BoardMap;
+use check_buddy::BoardMap;
 use macroquad::prelude::*;
 
 pub async fn run() {

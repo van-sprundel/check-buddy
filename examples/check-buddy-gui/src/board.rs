@@ -1,6 +1,6 @@
 use crate::states::PointerState;
-use check_buddy_core::position_move::{Position, PositionMove};
-use check_buddy_core::{BoardMap, Piece};
+use check_buddy::position_move::{Position, PositionMove};
+use check_buddy::{BoardMap, Piece};
 use macroquad::prelude::*;
 use std::collections::HashMap;
 

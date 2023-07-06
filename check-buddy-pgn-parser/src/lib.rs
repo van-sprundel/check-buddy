@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use check_buddy_core::*;
+use check_buddy::*;
 
 pub struct PgnParser;
 

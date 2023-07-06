@@ -1,4 +1,4 @@
-use check_buddy_core::BoardMap;
+use check_buddy::BoardMap;
 use std::io;
 use std::io::Write;
 
