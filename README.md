@@ -4,8 +4,7 @@
   </a>
 </h1>
 
-<p>A Chess engine written in Rust, using <a href="https://github.com/bevyengine/bevy/" target="_blank">🐦Bevy</a> as GUI
-</p>
+<p>A Chess engine written in Rust!</p>
 
 ![](../../assets/footage.gif)
 
