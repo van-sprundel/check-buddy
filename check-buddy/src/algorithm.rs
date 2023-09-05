@@ -180,7 +180,6 @@ impl ChessEngine {
         } else {
             -1.
         };
-        // println!("{material_weight} * ({num_white_pieces} - {num_black_pieces}) * {who2move}");
         material_weight * (num_white_pieces - num_black_pieces) * who2move
     }
 }

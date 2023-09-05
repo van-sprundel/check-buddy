@@ -28,7 +28,6 @@ fn best_move_should_be_valid() {
             .any(|(from, to)| from == best_from && to == best_to)
         {
             let piece = board_map.get_piece(*best_from);
-            println! {"{:?}", board_map};
             panic!(
                 "{:?} from {:?} to {:?} isn't seen as a valid move",
                 piece, best_from, best_to

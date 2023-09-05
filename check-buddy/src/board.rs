@@ -377,7 +377,6 @@ impl BoardMap {
                 if let Some(position) = found_position {
                     position
                 } else {
-                    println!("{:?}", self);
                     return Err(anyhow!(
                         "Couldn't find [from] position for {:?} with [to] {:?}",
                         uci,
@@ -581,7 +580,6 @@ impl BoardMap {
 
             temp_board.undo_move(position_move, last_piece);
         }
-        // eprintln!("legal positions {:?} {:?}", &from, &legal_positions);
         legal_positions
     }
     /// generate all possible move position for piece
@@ -617,7 +615,6 @@ impl BoardMap {
 
                 if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
                     // your own color is in the way
-                    // eprintln!("Piece is yours! {:?}",target_move);
                     break;
                 }
                 positions.push(target_position);
@@ -625,7 +622,6 @@ impl BoardMap {
 
                 if target_piece.is_piece() && target_piece.get_color() != piece_from.get_color() {
                     // Enemy piece and capturable
-                    // eprintln!("Piece is not yours, but you should still break the loop!");
                     break;
                 }
             }
@@ -648,15 +644,12 @@ impl BoardMap {
 
             if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
                 // your own color is in the way
-                // eprintlnln!("Piece is yours!");
                 continue;
             }
             positions.push(target_move);
-            // self.squares[target_move[0]][target_move[1]] = Piece(100);
 
             if target_piece.is_piece() && target_piece.get_color() != piece_from.get_color() {
                 // Enemy piece and capturable
-                // eprintln!("A piece that's yours is blocking any other moves");
                 continue;
             }
         }
@@ -726,7 +719,6 @@ impl BoardMap {
                 let to_left = self.squares[from[0]][from[1] - 1];
                 if let Some(PieceType::Pawn(en_passantable)) = to_left.get_type() {
                     if en_passantable && to_left.get_color() != piece_from.get_color() {
-                        // eprintln!("piece on left ({:?}) is en passantable!", [from[0], from[1] - 1]);
                         let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] - 1];
                         moves.push(to_en_passant);
                     }
@@ -751,7 +743,6 @@ impl BoardMap {
                 let to_right = self.squares[from[0]][from[1] + 1];
                 if let Some(PieceType::Pawn(en_passantable)) = to_right.get_type() {
                     if en_passantable && to_right.get_color() != piece_from.get_color() {
-                        // eprintln!("piece on right ({:?}) is en passantable!", [from[0], from[1] + 1]);
                         let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] + 1];
                         moves.push(to_en_passant);
                     }
@@ -808,16 +799,13 @@ impl BoardMap {
             promotion,
         } = position_move;
         if en_passant {
-            // eprintln!("move is an en passant! {from:?} {to:?}");
             let shift = if self.get_piece(from).get_color() == PieceColor::Black {
                 1
             } else {
                 -1
             };
             let to_step = [(to[0] as isize - shift) as usize, to[1]];
-            // if to_step[0] != 0 && to_step[1] != 0  && to_step[0] != 8 {
             self.set_piece(to_step, 0);
-            // }
         }
         if promotion {
             let color = match self.get_piece(from).get_color() {
@@ -869,7 +857,6 @@ impl BoardMap {
             for file in 0..8 {
                 let piece = self.squares[rank][file];
                 if piece.is_piece() && piece.get_color() != self.active_color {
-                    // eprintln!("found enemy piece! {:?}", moves);
                     let positions = self.gen_to_positions([rank, file]);
                     opponent_positions.extend(positions);
                 }
@@ -1048,7 +1035,6 @@ impl BoardMap {
         let should_enable_en_passant = self.move_should_enable_en_passant(position_move);
 
         if should_enable_en_passant {
-            // eprintln!("Piece became en passantable! ({},{})", to[0], to[1]);
             if self.get_piece(to).0 < 32 {
                 self.get_piece_mut(to).0 += 32;
             }
