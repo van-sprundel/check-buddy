@@ -8,7 +8,7 @@
 
 ![](../../assets/footage.gif)
 
-# ✔️ Currently implemented
+## ✔️ Currently implemented
 - [x] All pieces rules
 - [x] Move check
 - [x] Next move check
