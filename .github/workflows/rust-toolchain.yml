@@ -1,21 +1,38 @@
-on: [ push ]
+on:
+  push:
+    branches:
+      - master
 
-name: build
+name: Check buddy
 
 jobs:
   check:
-    name: Rust project
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: stable
           override: true
           components: rustfmt, clippy
-
-      - name: Run cargo check
+      - uses: Swatinem/rust-cache@v2
+      - name: Check
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: rustfmt
+        run: cargo fmt --all --check
+  test:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
-          command: check
+          command: test
+          args: --workspace --all

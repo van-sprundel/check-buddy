@@ -1,24 +1,5 @@
-[package]
-name = "check-buddy"
-description = "A WIP chess engine written in Rust."
-license-file = "LICENSE.md"
-version = "0.2.3"
-edition = "2021"
-authors = ["Ramon van Sprundel <ramonvansprundel@gmail.com>"]
-categories = ["chess", "chess-engine", "gui"]
-
 [workspace]
-members = ["crates/*"]
-
-[dependencies]
-check-buddy-core = { path = "crates/check-buddy-core", version = "0.2.3" }
-
-[profile.dev.package."*"]
-opt-level = 3
-
-[profile.dev]
-opt-level = 1
-
-[profile.release]
-lto = "thin"
-opt-level = 'z'
+members = ["check-buddy-*"]
+default-members = ["check-buddy-*"]
+exclude = ["assets/", ".github/", "check-buddy/tests/datasets/"]
+resolver = "2"

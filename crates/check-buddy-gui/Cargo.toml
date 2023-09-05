@@ -1,8 +1,0 @@
-[package]
-name = "check-buddy-gui"
-version = "0.2.3"
-edition = "2021"
-
-[dependencies]
-check-buddy-core = { path = "../check-buddy-core" }
-macroquad = "0.3"

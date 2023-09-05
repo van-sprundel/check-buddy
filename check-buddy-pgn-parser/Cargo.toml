@@ -1,0 +1,12 @@
+[package]
+name = "check-buddy-pgn-parser"
+description = "The PGN parser for check buddy"
+license-file = "LICENSE.md"
+version = "0.2.4"
+edition = "2021"
+authors = ["Ramon van Sprundel <ramonvansprundel@gmail.com>"]
+categories = ["chess", "chess-engine"]
+
+[dependencies]
+check-buddy = { version="0.2.4", path = "../check-buddy" }
+anyhow = "1.0"
