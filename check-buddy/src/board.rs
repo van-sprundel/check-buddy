@@ -1036,7 +1036,7 @@ impl BoardMap {
 
         if should_enable_en_passant && self.get_piece(to).0 < 32 {
             self.get_piece_mut(to).0 += 32;
-        // }
+        }
     }
 
     fn get_piece_positions_by_type(&self, piece_type: PieceType) -> Vec<Position> {
