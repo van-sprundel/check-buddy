@@ -1034,10 +1034,8 @@ impl BoardMap {
         let PositionMove { to, .. } = position_move;
         let should_enable_en_passant = self.move_should_enable_en_passant(position_move);
 
-        if should_enable_en_passant {
-            if self.get_piece(to).0 < 32 {
-                self.get_piece_mut(to).0 += 32;
-            }
+        if should_enable_en_passant && self.get_piece(to).0 < 32 {
+            self.get_piece_mut(to).0 += 32;
         }
     }
 
