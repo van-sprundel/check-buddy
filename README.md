@@ -8,7 +8,10 @@
 
 ![](../../assets/footage.gif)
 
-## ✔️ Currently implemented
+# Contributers welcome!
+Feel free to help out grow this project, I haven't been too active on this project, but there's some obvious improvements that could be made.
+
+# ✔️ Currently implemented
 - [x] All pieces rules
 - [x] Move check
 - [x] Next move check
