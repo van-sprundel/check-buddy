@@ -42,9 +42,7 @@ fn gen_move_data() -> Result<Vec<(BoardMap, (Position, Position))>> {
         env!("CARGO_MANIFEST_DIR")
     );
     let mut workbook: Xls<_> = open_workbook(path)?;
-    let range = workbook
-        .worksheet_range("best_move")
-        .ok_or(Error::msg("Cannot find first sheet"))??;
+    let range = workbook.worksheet_range("best_move")?;
 
     let iter = RangeDeserializerBuilder::new().from_range(&range)?;
     Ok(iter
