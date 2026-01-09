@@ -10,4 +10,4 @@ dist = true
 
 [dependencies]
 check-buddy = { path = "../check-buddy" }
-macroquad = "0.3"
+macroquad = "0.4"
