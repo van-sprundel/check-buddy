@@ -1,6 +1,7 @@
 use check_buddy::piece_type::PieceType;
 use check_buddy::BoardMap;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
 
 fn generate_moves(c: &mut Criterion) {
     let board = BoardMap::starting();
