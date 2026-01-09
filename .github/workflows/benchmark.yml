@@ -24,10 +24,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Install critcmp
+        if: github.event_name == 'pull_request'
         run: cargo install critcmp
 
       - name: Run benchmarks on PR branch
+        if: github.event_name == 'pull_request'
         run: cargo bench --bench generate_moves -- --save-baseline pr
+
+      - name: Run benchmarks on master
+        if: github.event_name == 'push'
+        run: |
+          cargo bench --bench generate_moves -- --output-format bencher | tee bencher-output.txt
 
       - name: Checkout base branch
         if: github.event_name == 'pull_request'
@@ -65,12 +72,13 @@ jobs:
         uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: "cargo"
-          output-file-path: target/criterion/generate_moves/*/new/estimates.json
+          output-file-path: bencher-output.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           alert-threshold: "150%"
           comment-on-alert: true
           fail-on-alert: false
-          # Store history on gh-pages branch
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: dev/bench
+          # Create gh-pages branch if it doesn't exist
+          skip-fetch-gh-pages: true
