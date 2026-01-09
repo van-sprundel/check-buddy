@@ -14,7 +14,6 @@ struct App {
     window: Option<Window>,
 }
 
-
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window_attributes = Window::default_attributes();

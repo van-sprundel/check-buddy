@@ -20,6 +20,10 @@ pub struct BoardMap {
     active_color: PieceColor,
     black_king_moved: bool,
     white_king_moved: bool,
+    black_queenside_rook_moved: bool,
+    black_kingside_rook_moved: bool,
+    white_queenside_rook_moved: bool,
+    white_kingside_rook_moved: bool,
 }
 
 impl Default for BoardMap {
@@ -31,6 +35,10 @@ impl Default for BoardMap {
             active_color: PieceColor::White,
             black_king_moved: false,
             white_king_moved: false,
+            black_queenside_rook_moved: false,
+            black_kingside_rook_moved: false,
+            white_queenside_rook_moved: false,
+            white_kingside_rook_moved: false,
         }
     }
 }
@@ -807,6 +815,37 @@ impl BoardMap {
             let to_step = [(to[0] as isize - shift) as usize, to[1]];
             self.set_piece(to_step, 0);
         }
+
+        // track castling rights
+        // mark kings and rooks as moved
+        let piece = self.get_piece(from);
+        if let Some(piece_type) = piece.get_type() {
+            match piece_type {
+                PieceType::King => {
+                    if piece.get_color() == PieceColor::White {
+                        self.white_king_moved = true;
+                    } else {
+                        self.black_king_moved = true;
+                    }
+                }
+                PieceType::Rook => {
+                    // check if rook move
+                    if piece.get_color() == PieceColor::White {
+                        if from == [7, 0] {
+                            self.white_queenside_rook_moved = true;
+                        } else if from == [7, 7] {
+                            self.white_kingside_rook_moved = true;
+                        }
+                    } else if from == [0, 0] {
+                        self.black_queenside_rook_moved = true;
+                    } else if from == [0, 7] {
+                        self.black_kingside_rook_moved = true;
+                    }
+                }
+                _ => {}
+            }
+        }
+
         if promotion {
             let color = match self.get_piece(from).get_color() {
                 PieceColor::Black => BLACK,
@@ -1130,7 +1169,7 @@ impl BoardMap {
     }
 
     fn black_can_long_castle(&self) -> bool {
-        if self.black_king_moved {
+        if self.black_king_moved || self.black_queenside_rook_moved {
             return false;
         }
         //TODO can be removed if single move turn supports castling
@@ -1140,13 +1179,24 @@ impl BoardMap {
             && possible_king.get_type().unwrap() == PieceType::King
         {
             let row = self.squares[0];
-            return row[1..4].iter().all(|p| !p.is_piece());
+            if !row[1..4].iter().all(|p| !p.is_piece()) {
+                return false;
+            }
+            // check king doesn't pass through check
+            // d8 c8 must not be attacked
+            if self.is_square_attacked_by([0, 4], PieceColor::White)
+                || self.is_square_attacked_by([0, 3], PieceColor::White)
+                || self.is_square_attacked_by([0, 2], PieceColor::White)
+            {
+                return false;
+            }
+            return true;
         }
         false
     }
 
     fn black_can_short_castle(&self) -> bool {
-        if self.black_king_moved {
+        if self.black_king_moved || self.black_kingside_rook_moved {
             return false;
         }
         //TODO can be removed if single move turn supports castling
@@ -1156,13 +1206,24 @@ impl BoardMap {
             && possible_king.get_type().unwrap() == PieceType::King
         {
             let row = self.squares[0];
-            return row[5..7].iter().all(|p| !p.is_piece());
+            if !row[5..7].iter().all(|p| !p.is_piece()) {
+                return false;
+            }
+            // check king doesn't pass through check
+            // e8 f8 and g8 must not be attacked
+            if self.is_square_attacked_by([0, 4], PieceColor::White)
+                || self.is_square_attacked_by([0, 5], PieceColor::White)
+                || self.is_square_attacked_by([0, 6], PieceColor::White)
+            {
+                return false;
+            }
+            return true;
         }
         false
     }
 
     fn white_can_long_castle(&self) -> bool {
-        if self.white_king_moved {
+        if self.white_king_moved || self.white_queenside_rook_moved {
             return false;
         }
         //TODO can be removed if single move turn supports castling
@@ -1172,13 +1233,24 @@ impl BoardMap {
             && possible_king.get_type().unwrap() == PieceType::King
         {
             let row = self.squares[7];
-            return row[1..4].iter().all(|p| !p.is_piece());
+            if !row[1..4].iter().all(|p| !p.is_piece()) {
+                return false;
+            }
+            // check king doesn't pass through check
+            // e1, d1 and c1 must not be attacked
+            if self.is_square_attacked_by([7, 4], PieceColor::Black)
+                || self.is_square_attacked_by([7, 3], PieceColor::Black)
+                || self.is_square_attacked_by([7, 2], PieceColor::Black)
+            {
+                return false;
+            }
+            return true;
         }
         false
     }
 
     fn white_can_short_castle(&self) -> bool {
-        if self.white_king_moved {
+        if self.white_king_moved || self.white_kingside_rook_moved {
             return false;
         }
         //TODO can be removed if single move turn supports castling
@@ -1188,7 +1260,18 @@ impl BoardMap {
             && possible_king.get_type().unwrap() == PieceType::King
         {
             let row = self.squares[7];
-            return row[5..7].iter().all(|p| !p.is_piece());
+            if !row[5..7].iter().all(|p| !p.is_piece()) {
+                return false;
+            }
+            // check king doesn't pass through check
+            // e1, f1 and g1 must not be attacked
+            if self.is_square_attacked_by([7, 4], PieceColor::Black)
+                || self.is_square_attacked_by([7, 5], PieceColor::Black)
+                || self.is_square_attacked_by([7, 6], PieceColor::Black)
+            {
+                return false;
+            }
+            return true;
         }
         false
     }
