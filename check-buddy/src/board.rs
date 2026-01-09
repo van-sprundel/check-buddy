@@ -410,6 +410,7 @@ impl BoardMap {
                 to,
                 en_passant,
                 promotion: false,
+                ..Default::default()
             },
         ))
     }
@@ -574,6 +575,7 @@ impl BoardMap {
                 to,
                 en_passant,
                 promotion,
+                ..Default::default()
             };
             temp_board.make_move(position_move);
             let next_moves = temp_board.gen_all_opponent_positions();
@@ -662,15 +664,15 @@ impl BoardMap {
             }
         }
 
-        // castling
-        if self.get_active_color() == &PieceColor::Black {
+        // castling - use piece color, not active color
+        if piece_from.get_color() == PieceColor::Black {
             if self.black_can_short_castle() {
                 positions.push([0, 6]);
             }
             if self.black_can_long_castle() {
                 positions.push([0, 2]);
             }
-        } else if self.get_active_color() == &PieceColor::White {
+        } else if piece_from.get_color() == PieceColor::White {
             if self.white_can_short_castle() {
                 positions.push([7, 6]);
             }
@@ -805,6 +807,7 @@ impl BoardMap {
             to,
             en_passant,
             promotion,
+            ..
         } = position_move;
         if en_passant {
             let shift = if self.get_piece(from).get_color() == PieceColor::Black {
@@ -846,12 +849,30 @@ impl BoardMap {
             }
         }
 
+        // handle castling rook movement
+        if let Some(PieceType::King) = piece.get_type() {
+            // detect castling by king moving 2 squares horizontally
+            if from[1] == 4 && to[1] == 6 {
+                // kingside castle - move rook from h-file to f-file
+                let rook_from = [from[0], 7];
+                let rook_to = [from[0], 5];
+                self.set_piece(rook_to, self.get_piece(rook_from).0);
+                self.set_piece(rook_from, 0);
+            } else if from[1] == 4 && to[1] == 2 {
+                // queenside castle - move rook from a-file to d-file
+                let rook_from = [from[0], 0];
+                let rook_to = [from[0], 3];
+                self.set_piece(rook_to, self.get_piece(rook_from).0);
+                self.set_piece(rook_from, 0);
+            }
+        }
+
         if promotion {
             let color = match self.get_piece(from).get_color() {
                 PieceColor::Black => BLACK,
                 PieceColor::White => WHITE,
             };
-            self.set_piece(to, QUEEN | color);
+            self.set_piece(to, position_move.promotion_piece | color);
         } else {
             self.set_piece(to, self.get_piece(from).0);
         }
@@ -867,9 +888,46 @@ impl BoardMap {
         }
     }
     pub fn undo_move(&mut self, piece_move: PositionMove, last_piece: u32) {
-        let PositionMove { from, to, .. } = piece_move;
+        let PositionMove { from, to, en_passant, .. } = piece_move;
+
+        // undo castling rook movement if this was a castling move
+        let piece = self.get_piece(to);
+        if let Some(PieceType::King) = piece.get_type() {
+            if from[1] == 4 && to[1] == 6 {
+                // undo kingside castle - move rook back from f-file to h-file
+                let rook_from = [from[0], 5];
+                let rook_to = [from[0], 7];
+                self.set_piece(rook_to, self.get_piece(rook_from).0);
+                self.set_piece(rook_from, 0);
+            } else if from[1] == 4 && to[1] == 2 {
+                // undo queenside castle - move rook back from d-file to a-file
+                let rook_from = [from[0], 3];
+                let rook_to = [from[0], 0];
+                self.set_piece(rook_to, self.get_piece(rook_from).0);
+                self.set_piece(rook_from, 0);
+            }
+        }
+
         self.set_piece(from, self.get_piece(to).0);
         self.set_piece(to, last_piece);
+
+        // undo en passant - restore the captured pawn
+        if en_passant {
+            let moving_piece = self.get_piece(from);
+            let shift = if moving_piece.get_color() == PieceColor::Black {
+                1
+            } else {
+                -1
+            };
+            let captured_pawn_pos = [(to[0] as isize - shift) as usize, to[1]];
+            // restore the captured pawn (it was the opponent's pawn with en-passant flag)
+            let opponent_color = if moving_piece.get_color() == PieceColor::Black {
+                WHITE
+            } else {
+                BLACK
+            };
+            self.set_piece(captured_pawn_pos, PAWN | opponent_color | 32);
+        }
     }
     /// generates all moves based on active color.
     pub fn gen_all_legal_moves(&self) -> Vec<PositionMove> {

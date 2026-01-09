@@ -1,9 +1,23 @@
-#[derive(Default, Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct PositionMove {
     pub from: Position,
     pub to: Position,
     pub en_passant: bool,
     pub promotion: bool,
+    pub promotion_piece: u32, // QUEEN, ROOK, BISHOP, or KNIGHT constant
+}
+
+impl Default for PositionMove {
+    fn default() -> Self {
+        use crate::piece_type::QUEEN;
+        Self {
+            from: [0, 0],
+            to: [0, 0],
+            en_passant: false,
+            promotion: false,
+            promotion_piece: QUEEN,
+        }
+    }
 }
 
 impl PositionMove {

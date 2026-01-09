@@ -37,19 +37,42 @@ fn move_integration(board_map: BoardMap, depth: usize) -> usize {
             }
 
             for to in board_map.gen_legal_positions(from) {
-                let mut next_board = board_map;
+                let is_en_passant = board_map.is_en_passant(from, to);
+                let is_promotion = board_map.is_promotion(from, to);
 
-                let position_move = PositionMove {
-                    from,
-                    to,
-                    en_passant: board_map.is_en_passant(from, to),
-                    promotion: board_map.is_promotion(from, to),
-                };
+                if is_promotion {
+                    // Generate all 4 promotion options
+                    use check_buddy::piece_type::{QUEEN, ROOK, BISHOP, KNIGHT};
+                    for promotion_piece in [QUEEN, ROOK, BISHOP, KNIGHT] {
+                        let mut next_board = board_map;
+                        let position_move = PositionMove {
+                            from,
+                            to,
+                            en_passant: is_en_passant,
+                            promotion: true,
+                            promotion_piece,
+                        };
 
-                next_board.make_move(position_move);
-                next_board.switch_active_color();
+                        next_board.make_move(position_move);
+                        next_board.switch_active_color();
 
-                num_moves += move_integration(next_board, depth - 1);
+                        num_moves += move_integration(next_board, depth - 1);
+                    }
+                } else {
+                    let mut next_board = board_map;
+                    let position_move = PositionMove {
+                        from,
+                        to,
+                        en_passant: is_en_passant,
+                        promotion: false,
+                        ..Default::default()
+                    };
+
+                    next_board.make_move(position_move);
+                    next_board.switch_active_color();
+
+                    num_moves += move_integration(next_board, depth - 1);
+                }
             }
         }
     }
