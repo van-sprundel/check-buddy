@@ -9,15 +9,11 @@ use winit::{
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
+#[derive(Default)]
 struct App {
     window: Option<Window>,
 }
 
-impl Default for App {
-    fn default() -> Self {
-        Self { window: None }
-    }
-}
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {

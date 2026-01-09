@@ -148,7 +148,7 @@ impl Board {
             y_pos,
             self.position_size,
             self.position_size,
-            if (x + y) % 2 == 0 {
+            if (x + y).is_multiple_of(2) {
                 self.board_conf.light_square
             } else {
                 self.board_conf.dark_square
