@@ -1,0 +1,76 @@
+name: Benchmark PR
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+  pull-requests: write
+  deployments: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install critcmp
+        run: cargo install critcmp
+
+      - name: Run benchmarks on PR branch
+        run: cargo bench --bench generate_moves -- --save-baseline pr
+
+      - name: Checkout base branch
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          clean: false
+
+      - name: Run benchmarks on base branch
+        if: github.event_name == 'pull_request'
+        run: cargo bench --bench generate_moves -- --save-baseline base
+
+      - name: Compare benchmarks
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "## 📊 Benchmark Results" > benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo "Comparing \`${{ github.head_ref }}\` (PR) vs \`${{ github.base_ref }}\` (base)" >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo '```' >> benchmark_results.md
+          critcmp base pr >> benchmark_results.md 2>&1 || echo "Unable to compare benchmarks" >> benchmark_results.md
+          echo '```' >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          echo "<sub>⏱️ Lower is better. Variance is calculated from 100 samples.</sub>" >> benchmark_results.md
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: benchmark_results.md
+          comment_tag: benchmark_results
+
+      - name: Store benchmark result
+        if: github.event_name == 'push'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: "cargo"
+          output-file-path: target/criterion/generate_moves/*/new/estimates.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: "150%"
+          comment-on-alert: true
+          fail-on-alert: false
+          # Store history on gh-pages branch
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
