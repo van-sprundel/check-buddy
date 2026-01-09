@@ -1,8 +1,12 @@
 [package]
 name = "check-buddy-wgpu"
-version = "0.1.0"
+version = "0.2.6"
 edition = "2021"
 publish = false
+repository = "https://github.com/van-sprundel/check-buddy"
+
+[package.metadata.dist]
+dist = true
 
 [dependencies]
 cfg-if = "1"

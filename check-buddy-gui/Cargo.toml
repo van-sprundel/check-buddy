@@ -1,0 +1,13 @@
+[package]
+name = "check-buddy-gui"
+version = "0.2.6"
+edition = "2021"
+publish = false
+repository = "https://github.com/van-sprundel/check-buddy"
+
+[package.metadata.dist]
+dist = true
+
+[dependencies]
+check-buddy = { path = "../check-buddy" }
+macroquad = "0.3"

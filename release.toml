@@ -1,0 +1,24 @@
+# cargo-release configuration
+# https://github.com/crate-ci/cargo-release
+
+# Keep all workspace packages at the same version
+shared-version = true
+
+# Automatically update internal dependencies when releasing
+dependent-version = "upgrade"
+
+# Git settings
+tag-prefix = "v"
+tag-name = "{{prefix}}{{version}}"
+tag-message = "Release {{crate_name}} {{version}}"
+
+# Commit settings
+consolidate-commits = true
+pre-release-commit-message = "chore: release {{version}}"
+
+# Don't publish unpublished crates to crates.io
+# (cargo-release respects publish = false in Cargo.toml)
+
+# Push to remote after release
+push = true
+push-options = ["--follow-tags"]

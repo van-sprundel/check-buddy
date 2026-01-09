@@ -1,0 +1,32 @@
+# Publish libraries to crates.io
+# Called by cargo-dist after successful release builds
+
+name: Publish Crates
+
+on:
+  workflow_call:
+    inputs:
+      plan:
+        required: true
+        type: string
+
+jobs:
+  publish-crates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish check-buddy to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish -p check-buddy --no-verify
+        continue-on-error: true
+
+      - name: Publish check-buddy-pgn-parser to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish -p check-buddy-pgn-parser --no-verify
+        continue-on-error: true
