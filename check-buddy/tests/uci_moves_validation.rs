@@ -22,7 +22,7 @@ fn uci_moves_should_be_valid() -> Result<()> {
             let PositionMove { from, to, .. } = actual_move.1;
             let positions = board.gen_legal_positions(from);
 
-            if !positions.iter().any(|piece_to| *piece_to == to) {
+            if !positions.contains(&to) {
                 let piece = board.get_piece(from);
                 panic!(
                     "

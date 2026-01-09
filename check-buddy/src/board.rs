@@ -894,6 +894,84 @@ impl BoardMap {
 
         false
     }
+
+    /// Check if a square is attacked by pieces of the given color
+    pub fn is_square_attacked_by(&self, square: Position, attacking_color: PieceColor) -> bool {
+        let index = square[0] * 8 + square[1];
+
+        // check for attacking pawns
+        let pawn_direction = if attacking_color == PieceColor::White {
+            8
+        } else {
+            -8
+        };
+        for file_offset in [-1, 1] {
+            let pawn_index = index as i32 + pawn_direction + file_offset;
+            if (0..64).contains(&pawn_index) {
+                let pawn_pos = [pawn_index as usize / 8, pawn_index as usize % 8];
+
+                // prevent wrapping
+                if (square[1] as i32 + file_offset) >= 0 && (square[1] as i32 + file_offset) < 8 {
+                    let attacker = self.get_piece(pawn_pos);
+                    if attacker.is_piece()
+                        && attacker.get_color() == attacking_color
+                        && matches!(attacker.get_type(), Some(PieceType::Pawn(_)))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // check for attacking knights
+        for &offset in KNIGHT_DIRECTION_OFFSETS.iter() {
+            let knight_rank = square[0] as i32 + offset[0];
+            let knight_file = square[1] as i32 + offset[1];
+            if (0..8).contains(&knight_rank) && (0..8).contains(&knight_file) {
+                let attacker_pos = [knight_rank as usize, knight_file as usize];
+                let attacker = self.get_piece(attacker_pos);
+                if attacker.is_piece()
+                    && attacker.get_color() == attacking_color
+                    && attacker.get_type() == Some(PieceType::Knight)
+                {
+                    return true;
+                }
+            }
+        }
+
+        // check for attacking sliding pieces (bishops, rooks, queens) and king
+        for (dir_idx, &offset) in DIRECTION_OFFSETS.iter().enumerate() {
+            let direction = Direction::from(dir_idx);
+            let is_diagonal = dir_idx % 2 == 1; // diagonal directions are odd indices
+            let max_distance = self.len_to_edge(square, direction);
+
+            for n in 1..=max_distance {
+                let target_index = index as i32 + offset * n as i32;
+                if !(0..64).contains(&target_index) {
+                    break;
+                }
+
+                let check_pos = [target_index as usize / 8, target_index as usize % 8];
+                let piece = self.get_piece(check_pos);
+
+                if piece.is_piece() {
+                    if piece.get_color() == attacking_color {
+                        match piece.get_type() {
+                            Some(PieceType::Queen) => return true,
+                            Some(PieceType::Bishop) if is_diagonal => return true,
+                            Some(PieceType::Rook) if !is_diagonal => return true,
+                            Some(PieceType::King) if n == 1 => return true,
+                            _ => {}
+                        }
+                    }
+                    break; // piece blocks further checks in this direction
+                }
+            }
+        }
+
+        false
+    }
+
     // f(p) = 200(K-K')
     //        + 9(Q-Q')
     //        + 5(R-R')
