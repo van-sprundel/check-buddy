@@ -1,4 +1,4 @@
-use check_buddy::position_move::{Position, PositionMove};
+use check_buddy::position_move::PositionMove;
 use check_buddy::BoardMap;
 
 const SHANNON_TABLE: [usize; 6] = [20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
@@ -11,8 +11,13 @@ fn move_integration_test_should_return_valid_move_count_on_depth_one() {
 
 #[test]
 fn move_integration_test_should_match_shannon_number() {
-    //currently layer 5 takes longer than 60 seconds
     assert_eq!(SHANNON_TABLE[3], move_integration(BoardMap::starting(), 4));
+}
+
+#[test]
+#[ignore]
+fn move_integration_depth_5() {
+    assert_eq!(SHANNON_TABLE[4], move_integration(BoardMap::starting(), 5));
 }
 
 fn move_integration(board_map: BoardMap, depth: usize) -> usize {
@@ -20,34 +25,32 @@ fn move_integration(board_map: BoardMap, depth: usize) -> usize {
         return 1;
     }
 
-    let positions = (0..8)
-        .flat_map(|x| {
-            (0..8)
-                .flat_map(|y| {
-                    board_map
-                        .gen_legal_positions([x, y])
-                        .iter()
-                        .map(|i| ([x, y], *i))
-                        .collect::<Vec<(Position, Position)>>()
-                })
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
-
     let mut num_moves = 0;
 
-    for (from, to) in positions {
-        let mut board_map = board_map;
-        if board_map
-            .single_move_turn(PositionMove {
-                from,
-                to,
-                en_passant: false,
-                promotion: false,
-            })
-            .is_ok()
-        {
-            num_moves += move_integration(board_map, depth - 1);
+    for x in 0..8 {
+        for y in 0..8 {
+            let from = [x, y];
+            let piece = board_map.get_piece(from);
+
+            if !piece.is_piece() || piece.get_color() != *board_map.get_active_color() {
+                continue;
+            }
+
+            for to in board_map.gen_legal_positions(from) {
+                let mut next_board = board_map;
+
+                let position_move = PositionMove {
+                    from,
+                    to,
+                    en_passant: board_map.is_en_passant(from, to),
+                    promotion: board_map.is_promotion(from, to),
+                };
+
+                next_board.make_move(position_move);
+                next_board.switch_active_color();
+
+                num_moves += move_integration(next_board, depth - 1);
+            }
         }
     }
 

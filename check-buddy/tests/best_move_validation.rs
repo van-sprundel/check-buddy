@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Error, Result};
+use anyhow::{anyhow, Result};
 use calamine::*;
 use check_buddy::position_move::Position;
 use check_buddy::BoardMap;
