@@ -175,7 +175,7 @@ impl Board {
             .get(piece.get_icon().unwrap())
             .unwrap();
         draw_texture_ex(
-            *texture,
+            texture,
             x_pos,
             y_pos,
             WHITE,
