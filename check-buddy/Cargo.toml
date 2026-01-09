@@ -18,7 +18,12 @@ thiserror = "2"
 calamine = "0.32.0"
 criterion = "0.8.1"
 csv = "1.4.0"
- 
+iai-callgrind = "0.16"
+
 [[bench]]
 name = "generate_moves"
+harness = false
+
+[[bench]]
+name = "generate_moves_iai"
 harness = false
