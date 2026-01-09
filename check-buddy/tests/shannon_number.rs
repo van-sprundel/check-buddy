@@ -11,38 +11,38 @@ fn move_integration_test_should_return_valid_move_count_on_depth_one() {
 
 #[test]
 fn move_integration_test_should_match_shannon_number() {
-    assert_eq!(SHANNON_TABLE[3], move_integration(BoardMap::starting(), 4));
-}
-
-#[test]
-#[ignore]
-fn move_integration_depth_5() {
-    assert_eq!(SHANNON_TABLE[4], move_integration(BoardMap::starting(), 5));
+    let board_map = BoardMap::starting();
+    for depth in 1..=5 {
+        let result = move_integration(board_map, depth);
+        assert_eq!(
+            SHANNON_TABLE[depth - 1],
+            result,
+            "Mismatch at depth {}: expected {}, got {}",
+            depth,
+            SHANNON_TABLE[depth - 1],
+            result
+        );
+    }
 }
 
 fn move_integration(board_map: BoardMap, depth: usize) -> usize {
     if depth == 0 {
         return 1;
     }
-
     let mut num_moves = 0;
-
     for x in 0..8 {
         for y in 0..8 {
             let from = [x, y];
             let piece = board_map.get_piece(from);
-
             if !piece.is_piece() || piece.get_color() != *board_map.get_active_color() {
                 continue;
             }
-
             for to in board_map.gen_legal_positions(from) {
                 let is_en_passant = board_map.is_en_passant(from, to);
                 let is_promotion = board_map.is_promotion(from, to);
-
                 if is_promotion {
                     // Generate all 4 promotion options
-                    use check_buddy::piece_type::{QUEEN, ROOK, BISHOP, KNIGHT};
+                    use check_buddy::piece_type::{BISHOP, KNIGHT, QUEEN, ROOK};
                     for promotion_piece in [QUEEN, ROOK, BISHOP, KNIGHT] {
                         let mut next_board = board_map;
                         let position_move = PositionMove {
@@ -52,10 +52,8 @@ fn move_integration(board_map: BoardMap, depth: usize) -> usize {
                             promotion: true,
                             promotion_piece,
                         };
-
                         next_board.make_move(position_move);
                         next_board.switch_active_color();
-
                         num_moves += move_integration(next_board, depth - 1);
                     }
                 } else {
@@ -67,15 +65,12 @@ fn move_integration(board_map: BoardMap, depth: usize) -> usize {
                         promotion: false,
                         ..Default::default()
                     };
-
                     next_board.make_move(position_move);
                     next_board.switch_active_color();
-
                     num_moves += move_integration(next_board, depth - 1);
                 }
             }
         }
     }
-
     num_moves
 }
