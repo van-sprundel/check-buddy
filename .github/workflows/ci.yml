@@ -10,6 +10,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo clippy --all-targets --locked
   test:
     runs-on: ubuntu-latest
     steps:
