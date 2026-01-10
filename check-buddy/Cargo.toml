@@ -13,6 +13,7 @@ keywords = ["chess", "chess-engine"]
 rand = "0.9"
 anyhow = "1"
 thiserror = "2"
+arrayvec = "0.7.6"
 
 [dev-dependencies]
 calamine = "0.32.0"

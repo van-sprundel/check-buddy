@@ -6,6 +6,7 @@ use crate::piece::{piece_type::*, Piece};
 use crate::piece_color::PieceColor;
 use crate::uci_move::{UciMove, UciMoveType, NON_PAWN_SYMBOLS};
 use anyhow::{anyhow, Result};
+use arrayvec::ArrayVec;
 use std::borrow::BorrowMut;
 use std::cmp::min;
 use std::fmt::{Debug, Formatter};
@@ -608,7 +609,7 @@ impl BoardMap {
         legal_positions
     }
     /// generate all possible move position for piece
-    pub fn gen_to_positions(&self, from: Position) -> Vec<Position> {
+    pub fn gen_to_positions(&self, from: Position) -> ArrayVec<Position, 32> {
         let piece_from = self.squares[from[0]][from[1]];
         if let Some(piece_type) = piece_from.get_type() {
             return match piece_type {
@@ -620,11 +621,12 @@ impl BoardMap {
                 PieceType::Knight => self.gen_knight(from),
             };
         }
-        vec![]
+
+        ArrayVec::new()
     }
-    pub fn gen_sliding(&self, from: Position, piece_type: PieceType) -> Vec<Position> {
+    pub fn gen_sliding(&self, from: Position, piece_type: PieceType) -> ArrayVec<Position, 32> {
         let piece_from = self.squares[from[0]][from[1]];
-        let mut positions = vec![];
+        let mut positions = ArrayVec::new();
         let start = if piece_type == PieceType::Bishop {
             4
         } else {
@@ -653,9 +655,9 @@ impl BoardMap {
         }
         positions
     }
-    pub fn gen_king(&self, from: Position) -> Vec<Position> {
+    pub fn gen_king(&self, from: Position) -> ArrayVec<Position, 32> {
         let piece_from = self.squares[from[0]][from[1]];
-        let mut positions = vec![];
+        let mut positions = ArrayVec::new();
         for (direction, offset) in DIRECTION_OFFSETS.iter().enumerate() {
             let index = from[0] * 8 + from[1];
             let target_index = index as i32 + offset;
@@ -698,9 +700,9 @@ impl BoardMap {
 
         positions
     }
-    pub fn gen_pawn(&self, from: Position) -> Vec<Position> {
+    pub fn gen_pawn(&self, from: Position) -> ArrayVec<Position, 32> {
         let piece_from = self.squares[from[0]][from[1]];
-        let mut moves = vec![];
+        let mut moves = ArrayVec::new();
         let shift = match piece_from.get_color() {
             PieceColor::Black => 1,
             PieceColor::White => -1,
@@ -776,7 +778,7 @@ impl BoardMap {
         }
         moves
     }
-    pub fn gen_knight(&self, from: Position) -> Vec<Position> {
+    pub fn gen_knight(&self, from: Position) -> ArrayVec<Position, 32> {
         let piece_from = self.squares[from[0]][from[1]];
         KNIGHT_DIRECTION_OFFSETS
             .iter()
