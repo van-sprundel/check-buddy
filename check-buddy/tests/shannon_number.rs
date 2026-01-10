@@ -4,12 +4,6 @@ use check_buddy::BoardMap;
 const SHANNON_TABLE: [usize; 6] = [20, 400, 8_902, 197_281, 4_865_609, 119_060_324];
 
 #[test]
-fn move_integration_test_should_return_valid_move_count_on_depth_one() {
-    let board_map = BoardMap::starting();
-    assert_eq!(20, move_integration(board_map, 1));
-}
-
-#[test]
 fn move_integration_test_should_match_shannon_number() {
     let board_map = BoardMap::starting();
     for depth in 1..=5 {
