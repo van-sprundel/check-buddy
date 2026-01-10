@@ -626,6 +626,7 @@ impl BoardMap {
     }
     pub fn gen_sliding(&self, from: Position, piece_type: PieceType) -> ArrayVec<Position, 32> {
         let piece_from = self.squares[from[0]][from[1]];
+        let piece_color = piece_from.get_color();
         let mut positions = ArrayVec::new();
         let start = if piece_type == PieceType::Bishop {
             4
@@ -640,14 +641,14 @@ impl BoardMap {
                 let target_position = [target_index / 8, target_index % 8];
                 let target_piece = self.squares[target_position[0]][target_position[1]];
 
-                if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
+                if target_piece.is_piece() && target_piece.get_color() == piece_color {
                     // your own color is in the way
                     break;
                 }
                 positions.push(target_position);
                 // self.squares[target_move[0]][target_move[1]] = Piece(100);
 
-                if target_piece.is_piece() && target_piece.get_color() != piece_from.get_color() {
+                if target_piece.is_piece() && target_piece.get_color() != piece_color {
                     // Enemy piece and capturable
                     break;
                 }
@@ -657,6 +658,7 @@ impl BoardMap {
     }
     pub fn gen_king(&self, from: Position) -> ArrayVec<Position, 32> {
         let piece_from = self.squares[from[0]][from[1]];
+        let piece_color = piece_from.get_color();
         let mut positions = ArrayVec::new();
         for (direction, offset) in DIRECTION_OFFSETS.iter().enumerate() {
             let index = from[0] * 8 + from[1];
@@ -669,27 +671,27 @@ impl BoardMap {
             let target_move = [target_index as usize / 8, target_index as usize % 8];
             let target_piece = self.squares[target_move[0]][target_move[1]];
 
-            if target_piece.is_piece() && target_piece.get_color() == piece_from.get_color() {
+            if target_piece.is_piece() && target_piece.get_color() == piece_color {
                 // your own color is in the way
                 continue;
             }
             positions.push(target_move);
 
-            if target_piece.is_piece() && target_piece.get_color() != piece_from.get_color() {
+            if target_piece.is_piece() && target_piece.get_color() != piece_color {
                 // Enemy piece and capturable
                 continue;
             }
         }
 
         // castling - use piece color, not active color
-        if piece_from.get_color() == PieceColor::Black {
+        if piece_color == PieceColor::Black {
             if self.black_can_short_castle() {
                 positions.push([0, 6]);
             }
             if self.black_can_long_castle() {
                 positions.push([0, 2]);
             }
-        } else if piece_from.get_color() == PieceColor::White {
+        } else {
             if self.white_can_short_castle() {
                 positions.push([7, 6]);
             }
@@ -703,10 +705,9 @@ impl BoardMap {
     pub fn gen_pawn(&self, from: Position) -> ArrayVec<Position, 32> {
         let piece_from = self.squares[from[0]][from[1]];
         let mut moves = ArrayVec::new();
-        let shift = match piece_from.get_color() {
-            PieceColor::Black => 1,
-            PieceColor::White => -1,
-        };
+        let piece_color = piece_from.get_color();
+        let is_black = piece_color == PieceColor::Black;
+        let shift = if is_black { 1 } else { -1 };
 
         // piece blocking
         let vertical = (from[0] as i32 + shift) as usize;
@@ -720,10 +721,7 @@ impl BoardMap {
             let vertical = (from[0] as i32 + shift * 2) as usize;
             if vertical < 8 {
                 let is_blocking = is_blocking || self.squares[vertical][from[1]].is_piece();
-                if ((piece_from.is_black() && from[0] == 1)
-                    || (piece_from.is_white() && from[0] == 6))
-                    && !is_blocking
-                {
+                if ((is_black && from[0] == 1) || (!is_black && from[0] == 6)) && !is_blocking {
                     moves.push([vertical, from[1]]);
                 }
             }
@@ -736,7 +734,7 @@ impl BoardMap {
             let to_top_left_pos = [(from[0] as i32 + shift) as usize, from[1] - 1];
             if to_top_left_pos[0] < 8 {
                 let to_top_left = self.get_piece(to_top_left_pos);
-                if to_top_left.is_piece() && to_top_left.get_color() != piece_from.get_color() {
+                if to_top_left.is_piece() && to_top_left.get_color() != piece_color {
                     moves.push(to_top_left_pos);
                 }
 
@@ -745,7 +743,7 @@ impl BoardMap {
                 // _  p  .
                 let to_left = self.squares[from[0]][from[1] - 1];
                 if let Some(PieceType::Pawn(en_passantable)) = to_left.get_type() {
-                    if en_passantable && to_left.get_color() != piece_from.get_color() {
+                    if en_passantable && to_left.get_color() != piece_color {
                         let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] - 1];
                         moves.push(to_en_passant);
                     }
@@ -760,7 +758,7 @@ impl BoardMap {
             let to_top_right_pos = [(from[0] as i32 + shift) as usize, from[1] + 1];
             if to_top_right_pos[0] < 8 {
                 let to_top_right = self.squares[to_top_right_pos[0]][to_top_right_pos[1]];
-                if to_top_right.is_piece() && to_top_right.get_color() != piece_from.get_color() {
+                if to_top_right.is_piece() && to_top_right.get_color() != piece_color {
                     moves.push(to_top_right_pos);
                 }
 
@@ -769,7 +767,7 @@ impl BoardMap {
                 // .  p  _
                 let to_right = self.squares[from[0]][from[1] + 1];
                 if let Some(PieceType::Pawn(en_passantable)) = to_right.get_type() {
-                    if en_passantable && to_right.get_color() != piece_from.get_color() {
+                    if en_passantable && to_right.get_color() != piece_color {
                         let to_en_passant = [(from[0] as i32 + shift) as usize, from[1] + 1];
                         moves.push(to_en_passant);
                     }
@@ -780,6 +778,7 @@ impl BoardMap {
     }
     pub fn gen_knight(&self, from: Position) -> ArrayVec<Position, 32> {
         let piece_from = self.squares[from[0]][from[1]];
+        let piece_color = piece_from.get_color();
         KNIGHT_DIRECTION_OFFSETS
             .iter()
             .filter_map(|direction| {
@@ -789,9 +788,7 @@ impl BoardMap {
                 ];
                 if new_pos[0] < 8 && new_pos[1] < 8 {
                     let target_piece = self.squares[new_pos[0]][new_pos[1]];
-                    if !(target_piece.is_piece()
-                        && target_piece.get_color() == piece_from.get_color())
-                    {
+                    if !(target_piece.is_piece() && target_piece.get_color() == piece_color) {
                         return Some(new_pos);
                     }
                 }
