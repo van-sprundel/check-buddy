@@ -24,6 +24,8 @@ pub struct BoardMap {
     black_kingside_rook_moved: bool,
     white_queenside_rook_moved: bool,
     white_kingside_rook_moved: bool,
+    white_king_pos: Position,
+    black_king_pos: Position,
 }
 
 impl Default for BoardMap {
@@ -39,6 +41,8 @@ impl Default for BoardMap {
             black_kingside_rook_moved: false,
             white_queenside_rook_moved: false,
             white_kingside_rook_moved: false,
+            white_king_pos: [0, 0],
+            black_king_pos: [0, 0],
         }
     }
 }
@@ -73,7 +77,18 @@ impl BoardMap {
                         'n' => KNIGHT,
                         _ => 0,
                     };
-                    board.squares[index / 8][index % 8] = Piece(color | rank);
+                    let pos = [index / 8, index % 8];
+                    board.squares[pos[0]][pos[1]] = Piece(color | rank);
+
+                    // track king position
+                    if rank == KING {
+                        if color == WHITE {
+                            board.white_king_pos = pos;
+                        } else {
+                            board.black_king_pos = pos;
+                        }
+                    }
+
                     index += 1;
                 } else {
                     index += x.to_digit(10).unwrap() as usize;
@@ -429,6 +444,14 @@ impl BoardMap {
             }
         }
         vec
+    }
+    /// Find the king of the given color
+    pub fn find_king(&self, piece_color: PieceColor) -> Option<Position> {
+        let pos = match piece_color {
+            PieceColor::White => self.white_king_pos,
+            PieceColor::Black => self.black_king_pos,
+        };
+        Some(pos)
     }
     pub fn get_piece_mut(&mut self, pos: Position) -> &mut Piece {
         self.squares[pos[0]][pos[1]].borrow_mut()
@@ -819,8 +842,10 @@ impl BoardMap {
                 PieceType::King => {
                     if piece.get_color() == PieceColor::White {
                         self.white_king_moved = true;
+                        self.white_king_pos = to;
                     } else {
                         self.black_king_moved = true;
+                        self.black_king_pos = to;
                     }
                 }
                 PieceType::Rook => {
