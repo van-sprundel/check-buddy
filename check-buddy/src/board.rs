@@ -15,6 +15,7 @@ const RANKS: [char; 8] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const FILES: [char; 8] = ['1', '2', '3', '4', '5', '6', '7', '8'];
 
 // Lookup tables for converting bit index (0-63) to board coordinates
+#[rustfmt::skip]
 const SQUARE_TO_RANK: [usize; 64] = [
     0, 0, 0, 0, 0, 0, 0, 0,
     1, 1, 1, 1, 1, 1, 1, 1,
@@ -26,6 +27,7 @@ const SQUARE_TO_RANK: [usize; 64] = [
     7, 7, 7, 7, 7, 7, 7, 7,
 ];
 
+#[rustfmt::skip]
 const SQUARE_TO_FILE: [usize; 64] = [
     0, 1, 2, 3, 4, 5, 6, 7,
     0, 1, 2, 3, 4, 5, 6, 7,
@@ -862,17 +864,18 @@ impl BoardMap {
         let from_bit = 1u64 << (from[0] * 8 + from[1]);
         let to_bit = 1u64 << (to[0] * 8 + to[1]);
 
+        let piece = self.get_piece(from);
+        let piece_color = piece.get_color();
+        let is_white = piece_color == PieceColor::White;
+        let target_piece = self.get_piece(to);
+
         if en_passant {
-            let shift = if self.get_piece(from).get_color() == PieceColor::Black {
-                1
-            } else {
-                -1
-            };
+            let shift = if is_white { -1 } else { 1 };
             let to_step = [(to[0] as isize - shift) as usize, to[1]];
             let ep_bit = 1u64 << (to_step[0] * 8 + to_step[1]);
 
             // remove captured pawn from occupancy
-            if self.get_piece(from).get_color() == PieceColor::White {
+            if is_white {
                 self.black_occupancy ^= ep_bit;
             } else {
                 self.white_occupancy ^= ep_bit;
@@ -882,11 +885,10 @@ impl BoardMap {
 
         // track castling rights
         // mark kings and rooks as moved
-        let piece = self.get_piece(from);
         if let Some(piece_type) = piece.get_type() {
             match piece_type {
                 PieceType::King => {
-                    if piece.get_color() == PieceColor::White {
+                    if is_white {
                         self.white_king_moved = true;
                         self.white_king_pos = to;
                     } else {
@@ -896,7 +898,7 @@ impl BoardMap {
                 }
                 PieceType::Rook => {
                     // check if rook move
-                    if piece.get_color() == PieceColor::White {
+                    if is_white {
                         if from == [7, 0] {
                             self.white_queenside_rook_moved = true;
                         } else if from == [7, 7] {
@@ -913,7 +915,6 @@ impl BoardMap {
         }
 
         // invalidate castling if a rook is captured on its starting square
-        let target_piece = self.get_piece(to);
         if target_piece.is_piece() {
             if let Some(PieceType::Rook) = target_piece.get_type() {
                 match to {
@@ -935,11 +936,11 @@ impl BoardMap {
                 let rook_to = [from[0], 5];
                 let rook_from_bit = 1u64 << (rook_from[0] * 8 + rook_from[1]);
                 let rook_to_bit = 1u64 << (rook_to[0] * 8 + rook_to[1]);
-                if piece.get_color() == PieceColor::White {
-                    self.white_occupancy ^= rook_from_bit;
+                if is_white {
+                    self.white_occupancy ^= rook_from_bit | rook_to_bit;
                     self.white_occupancy |= rook_to_bit;
                 } else {
-                    self.black_occupancy ^= rook_from_bit;
+                    self.black_occupancy ^= rook_from_bit | rook_to_bit;
                     self.black_occupancy |= rook_to_bit;
                 }
                 self.set_piece(rook_to, self.get_piece(rook_from).0);
@@ -950,11 +951,11 @@ impl BoardMap {
                 let rook_to = [from[0], 3];
                 let rook_from_bit = 1u64 << (rook_from[0] * 8 + rook_from[1]);
                 let rook_to_bit = 1u64 << (rook_to[0] * 8 + rook_to[1]);
-                if piece.get_color() == PieceColor::White {
-                    self.white_occupancy ^= rook_from_bit;
+                if is_white {
+                    self.white_occupancy ^= rook_from_bit | rook_to_bit;
                     self.white_occupancy |= rook_to_bit;
                 } else {
-                    self.black_occupancy ^= rook_from_bit;
+                    self.black_occupancy ^= rook_from_bit | rook_to_bit;
                     self.black_occupancy |= rook_to_bit;
                 }
                 self.set_piece(rook_to, self.get_piece(rook_from).0);
@@ -962,16 +963,15 @@ impl BoardMap {
             }
         }
 
-        let target_piece = self.get_piece(to);
-        if piece.get_color() == PieceColor::White {
-            self.white_occupancy ^= from_bit;
+        if is_white {
+            self.white_occupancy ^= from_bit | to_bit;
             self.white_occupancy |= to_bit;
 
             if target_piece.is_piece() {
                 self.black_occupancy ^= to_bit;
             }
         } else {
-            self.black_occupancy ^= from_bit;
+            self.black_occupancy ^= from_bit | to_bit;
             self.black_occupancy |= to_bit;
             if target_piece.is_piece() {
                 self.white_occupancy ^= to_bit;
@@ -979,13 +979,10 @@ impl BoardMap {
         }
 
         if promotion {
-            let color = match self.get_piece(from).get_color() {
-                PieceColor::Black => BLACK,
-                PieceColor::White => WHITE,
-            };
+            let color = if is_white { WHITE } else { BLACK };
             self.set_piece(to, position_move.promotion_piece | color);
         } else {
-            self.set_piece(to, self.get_piece(from).0);
+            self.set_piece(to, piece.0);
         }
         self.set_piece(from, 0);
 
@@ -1014,6 +1011,8 @@ impl BoardMap {
 
         // undo castling rook movement if this was a castling move
         let piece = self.get_piece(to);
+        let is_white = piece.get_color() == PieceColor::White;
+
         if let Some(PieceType::King) = piece.get_type() {
             if from[1] == 4 && to[1] == 6 {
                 // undo kingside castle - move rook back from f-file to h-file
@@ -1021,11 +1020,11 @@ impl BoardMap {
                 let rook_to = [from[0], 7];
                 let rook_from_bit = 1u64 << (rook_from[0] * 8 + rook_from[1]);
                 let rook_to_bit = 1u64 << (rook_to[0] * 8 + rook_to[1]);
-                if piece.get_color() == PieceColor::White {
-                    self.white_occupancy ^= rook_from_bit;
+                if is_white {
+                    self.white_occupancy ^= rook_from_bit | rook_to_bit;
                     self.white_occupancy |= rook_to_bit;
                 } else {
-                    self.black_occupancy ^= rook_from_bit;
+                    self.black_occupancy ^= rook_from_bit | rook_to_bit;
                     self.black_occupancy |= rook_to_bit;
                 }
                 self.set_piece(rook_to, self.get_piece(rook_from).0);
@@ -1036,11 +1035,11 @@ impl BoardMap {
                 let rook_to = [from[0], 0];
                 let rook_from_bit = 1u64 << (rook_from[0] * 8 + rook_from[1]);
                 let rook_to_bit = 1u64 << (rook_to[0] * 8 + rook_to[1]);
-                if piece.get_color() == PieceColor::White {
-                    self.white_occupancy ^= rook_from_bit;
+                if is_white {
+                    self.white_occupancy ^= rook_from_bit | rook_to_bit;
                     self.white_occupancy |= rook_to_bit;
                 } else {
-                    self.black_occupancy ^= rook_from_bit;
+                    self.black_occupancy ^= rook_from_bit | rook_to_bit;
                     self.black_occupancy |= rook_to_bit;
                 }
                 self.set_piece(rook_to, self.get_piece(rook_from).0);
@@ -1048,46 +1047,37 @@ impl BoardMap {
             }
         }
 
-        if piece.get_color() == PieceColor::White {
-            self.white_occupancy ^= to_bit;
+        if is_white {
+            self.white_occupancy ^= to_bit | from_bit;
             self.white_occupancy |= from_bit;
 
             if last_piece != 0 {
                 self.black_occupancy |= to_bit;
             }
         } else {
-            self.black_occupancy ^= to_bit;
+            self.black_occupancy ^= to_bit | from_bit;
             self.black_occupancy |= from_bit;
             if last_piece != 0 {
                 self.white_occupancy |= to_bit;
             }
         }
 
-        self.set_piece(from, self.get_piece(to).0);
+        self.set_piece(from, piece.0);
         self.set_piece(to, last_piece);
 
         // undo en passant - restore the captured pawn
         if en_passant {
-            let moving_piece = self.get_piece(from);
-            let shift = if moving_piece.get_color() == PieceColor::Black {
-                1
-            } else {
-                -1
-            };
+            let shift = if is_white { -1 } else { 1 };
             let captured_pawn_pos = [(to[0] as isize - shift) as usize, to[1]];
             let ep_bit = 1u64 << (captured_pawn_pos[0] * 8 + captured_pawn_pos[1]);
             // Restore captured pawn in occupancy
-            if moving_piece.get_color() == PieceColor::White {
+            if is_white {
                 self.black_occupancy |= ep_bit;
             } else {
                 self.white_occupancy |= ep_bit;
             }
             // restore the captured pawn (it was the opponent's pawn with en-passant flag)
-            let opponent_color = if moving_piece.get_color() == PieceColor::Black {
-                WHITE
-            } else {
-                BLACK
-            };
+            let opponent_color = if is_white { BLACK } else { WHITE };
             self.set_piece(captured_pawn_pos, PAWN | opponent_color | 32);
         }
     }
