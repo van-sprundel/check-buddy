@@ -77,4 +77,7 @@ library_benchmark_group!(
     benchmarks = pawn, king, knight, queen
 );
 
-main!(library_benchmark_groups = generate_moves, generate_piece_moves);
+main!(
+    library_benchmark_groups = generate_moves,
+    generate_piece_moves
+);

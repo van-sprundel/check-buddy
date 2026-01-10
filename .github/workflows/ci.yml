@@ -1,19 +1,27 @@
-name: Benchmark PR
+name: CI
 
 on:
   pull_request:
   push:
     branches: [master]
 
-permissions:
-  contents: write
-  pull-requests: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo clippy --all-targets --locked
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --all-features
   benchmark:
     name: Run benchmarks (instruction counts)
     runs-on: ubuntu-latest
@@ -31,10 +39,7 @@ jobs:
       - name: Run benchmarks on PR branch
         if: github.event_name == 'pull_request'
         run: |
-          cargo bench --bench generate_moves_iai
-          # Save the results
-          mkdir -p benchmark-results-pr
-          cp -r target/iai benchmark-results-pr/ || true
+          cargo bench --bench generate_moves_iai 2>&1 | tee benchmark-pr.txt
 
       - name: Run benchmarks on master
         if: github.event_name == 'push'
@@ -50,9 +55,7 @@ jobs:
       - name: Run benchmarks on base branch
         if: github.event_name == 'pull_request'
         run: |
-          cargo bench --bench generate_moves_iai
-          mkdir -p benchmark-results-base
-          cp -r target/iai benchmark-results-base/ || true
+          cargo bench --bench generate_moves_iai 2>&1 | tee benchmark-base.txt
 
       - name: Compare benchmarks
         if: github.event_name == 'pull_request'
@@ -64,8 +67,16 @@ jobs:
           echo "**Using iai-callgrind:** Counts instructions via Cachegrind - deterministic and not affected by CI noise." >> benchmark_results.md
           echo "" >> benchmark_results.md
           echo '```' >> benchmark_results.md
-          # Show recent benchmark output
-          find target/iai -name "*.txt" -type f -exec tail -50 {} \; 2>/dev/null | head -100 >> benchmark_results.md || echo "See job logs for detailed results" >> benchmark_results.md
+          # Extract and format benchmark results
+          if [ -f benchmark-base.txt ]; then
+            # Remove ANSI color codes and extract relevant lines
+            sed 's/\x1b\[[0-9;]*m//g' benchmark-base.txt | \
+              grep -E "(generate_moves_iai::|Instructions:)" | \
+              awk '/generate_moves_iai::/ {name=$1; gsub(/generate_moves_iai::/, "", name); gsub(/generate_/, "", name); gsub(/_/, " ", name)}
+                   /Instructions:/ {print name": "$2" ("$3")"}' >> benchmark_results.md
+          else
+            echo "See job logs for detailed results" >> benchmark_results.md
+          fi
           echo '```' >> benchmark_results.md
           echo "" >> benchmark_results.md
           echo "<sub>📏 Instruction counts via Cachegrind. Lower is better. Results are deterministic.</sub>" >> benchmark_results.md
