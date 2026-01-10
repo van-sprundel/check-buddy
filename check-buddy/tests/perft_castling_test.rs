@@ -54,5 +54,8 @@ fn test_perft_castling_position() {
     // But let's see what we actually get
 
     // The standard perft value for this position at depth 1 is 26
-    assert_eq!(depth1, 26, "Should have 26 moves at depth 1 with castling available");
+    assert_eq!(
+        depth1, 26,
+        "Should have 26 moves at depth 1 with castling available"
+    );
 }
