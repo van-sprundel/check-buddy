@@ -826,23 +826,23 @@ impl BoardMap {
             promotion,
             ..
         } = position_move;
+
+        let piece = self.get_piece(from);
+        let is_white = piece.get_color() == PieceColor::White;
+        let target_piece = self.get_piece(to);
+
         if en_passant {
-            let shift = if self.get_piece(from).get_color() == PieceColor::Black {
-                1
-            } else {
-                -1
-            };
+            let shift = if is_white { -1 } else { 1 };
             let to_step = [(to[0] as isize - shift) as usize, to[1]];
             self.set_piece(to_step, 0);
         }
 
         // track castling rights
         // mark kings and rooks as moved
-        let piece = self.get_piece(from);
         if let Some(piece_type) = piece.get_type() {
             match piece_type {
                 PieceType::King => {
-                    if piece.get_color() == PieceColor::White {
+                    if is_white {
                         self.white_king_moved = true;
                         self.white_king_pos = to;
                     } else {
@@ -852,7 +852,7 @@ impl BoardMap {
                 }
                 PieceType::Rook => {
                     // check if rook move
-                    if piece.get_color() == PieceColor::White {
+                    if is_white {
                         if from == [7, 0] {
                             self.white_queenside_rook_moved = true;
                         } else if from == [7, 7] {
@@ -869,7 +869,6 @@ impl BoardMap {
         }
 
         // invalidate castling if a rook is captured on its starting square
-        let target_piece = self.get_piece(to);
         if target_piece.is_piece() {
             if let Some(PieceType::Rook) = target_piece.get_type() {
                 match to {
@@ -889,25 +888,24 @@ impl BoardMap {
                 // kingside castle - move rook from h-file to f-file
                 let rook_from = [from[0], 7];
                 let rook_to = [from[0], 5];
-                self.set_piece(rook_to, self.get_piece(rook_from).0);
+                let rook_piece = self.get_piece(rook_from).0;
+                self.set_piece(rook_to, rook_piece);
                 self.set_piece(rook_from, 0);
             } else if from[1] == 4 && to[1] == 2 {
                 // queenside castle - move rook from a-file to d-file
                 let rook_from = [from[0], 0];
                 let rook_to = [from[0], 3];
-                self.set_piece(rook_to, self.get_piece(rook_from).0);
+                let rook_piece = self.get_piece(rook_from).0;
+                self.set_piece(rook_to, rook_piece);
                 self.set_piece(rook_from, 0);
             }
         }
 
         if promotion {
-            let color = match self.get_piece(from).get_color() {
-                PieceColor::Black => BLACK,
-                PieceColor::White => WHITE,
-            };
+            let color = if is_white { WHITE } else { BLACK };
             self.set_piece(to, position_move.promotion_piece | color);
         } else {
-            self.set_piece(to, self.get_piece(from).0);
+            self.set_piece(to, piece.0);
         }
         self.set_piece(from, 0);
 
@@ -931,42 +929,37 @@ impl BoardMap {
             ..
         } = piece_move;
 
-        // undo castling rook movement if this was a castling move
         let piece = self.get_piece(to);
+        let is_white = piece.get_color() == PieceColor::White;
+
+        // undo castling rook movement if this was a castling move
         if let Some(PieceType::King) = piece.get_type() {
             if from[1] == 4 && to[1] == 6 {
                 // undo kingside castle - move rook back from f-file to h-file
                 let rook_from = [from[0], 5];
                 let rook_to = [from[0], 7];
-                self.set_piece(rook_to, self.get_piece(rook_from).0);
+                let rook_piece = self.get_piece(rook_from).0;
+                self.set_piece(rook_to, rook_piece);
                 self.set_piece(rook_from, 0);
             } else if from[1] == 4 && to[1] == 2 {
                 // undo queenside castle - move rook back from d-file to a-file
                 let rook_from = [from[0], 3];
                 let rook_to = [from[0], 0];
-                self.set_piece(rook_to, self.get_piece(rook_from).0);
+                let rook_piece = self.get_piece(rook_from).0;
+                self.set_piece(rook_to, rook_piece);
                 self.set_piece(rook_from, 0);
             }
         }
 
-        self.set_piece(from, self.get_piece(to).0);
+        self.set_piece(from, piece.0);
         self.set_piece(to, last_piece);
 
         // undo en passant - restore the captured pawn
         if en_passant {
-            let moving_piece = self.get_piece(from);
-            let shift = if moving_piece.get_color() == PieceColor::Black {
-                1
-            } else {
-                -1
-            };
+            let shift = if is_white { -1 } else { 1 };
             let captured_pawn_pos = [(to[0] as isize - shift) as usize, to[1]];
             // restore the captured pawn (it was the opponent's pawn with en-passant flag)
-            let opponent_color = if moving_piece.get_color() == PieceColor::Black {
-                WHITE
-            } else {
-                BLACK
-            };
+            let opponent_color = if is_white { BLACK } else { WHITE };
             self.set_piece(captured_pawn_pos, PAWN | opponent_color | 32);
         }
     }
