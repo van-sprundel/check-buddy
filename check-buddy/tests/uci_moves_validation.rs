@@ -10,11 +10,14 @@ fn uci_moves_should_be_valid() -> Result<()> {
     for (row, (id, move_name, moves)) in move_data.iter().enumerate() {
         let mut board = BoardMap::starting();
         for piece_move in moves {
-            let actual_move = board.parse_uci_to_move(piece_move).unwrap_or_else(|_| {
+            let actual_move = board.parse_uci_to_move(piece_move).unwrap_or_else(|e| {
                 panic!(
                     "
     Row {row}
     Game {id}: ({move_name})
+    Move: {piece_move}
+    Error: {e:?}
+    Board: {board:?}
 "
                 )
             });
