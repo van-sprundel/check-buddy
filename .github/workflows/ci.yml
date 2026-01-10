@@ -1,19 +1,21 @@
-name: Benchmark PR
+name: CI
 
 on:
   pull_request:
   push:
     branches: [master]
 
-permissions:
-  contents: write
-  pull-requests: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --all-features
   benchmark:
     name: Run benchmarks (instruction counts)
     runs-on: ubuntu-latest
