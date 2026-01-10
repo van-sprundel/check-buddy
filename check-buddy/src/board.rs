@@ -886,9 +886,17 @@ impl BoardMap {
             }
             self.get_piece_mut(pos).0 %= 32;
         }
+
+        // mark pawn as en-passantable if it moved 2 squares
+        self.handle_convert_to_en_passantable(position_move);
     }
     pub fn undo_move(&mut self, piece_move: PositionMove, last_piece: u32) {
-        let PositionMove { from, to, en_passant, .. } = piece_move;
+        let PositionMove {
+            from,
+            to,
+            en_passant,
+            ..
+        } = piece_move;
 
         // undo castling rook movement if this was a castling move
         let piece = self.get_piece(to);
