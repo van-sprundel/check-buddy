@@ -454,20 +454,12 @@ impl BoardMap {
     ///
     /// returns true if move was successful
     pub fn uci_move_turn(&mut self, uci_move: UciMove) -> Result<()> {
-        if let UciMoveType::CastleShort { piece_color, .. } = uci_move.0 {
+        if let UciMoveType::CastleShort { .. } = uci_move.0 {
+            // make_move handles rook movement internally when king moves 2 squares
             self.make_move(uci_move.1);
-            if piece_color == PieceColor::White {
-                self.make_move(PositionMove::new([7, 7], [7, 5]));
-            } else {
-                self.make_move(PositionMove::new([0, 7], [0, 5]));
-            }
-        } else if let UciMoveType::CastleLong { piece_color, .. } = uci_move.0 {
+        } else if let UciMoveType::CastleLong { .. } = uci_move.0 {
+            // make_move handles rook movement internally when king moves 2 squares
             self.make_move(uci_move.1);
-            if piece_color == PieceColor::White {
-                self.make_move(PositionMove::new([7, 0], [7, 3]));
-            } else {
-                self.make_move(PositionMove::new([0, 0], [0, 3]));
-            }
         } else {
             let position_move = uci_move.1;
 
@@ -849,6 +841,20 @@ impl BoardMap {
             }
         }
 
+        // invalidate castling if a rook is captured on its starting square
+        let target_piece = self.get_piece(to);
+        if target_piece.is_piece() {
+            if let Some(PieceType::Rook) = target_piece.get_type() {
+                match to {
+                    [7, 0] => self.white_queenside_rook_moved = true,
+                    [7, 7] => self.white_kingside_rook_moved = true,
+                    [0, 0] => self.black_queenside_rook_moved = true,
+                    [0, 7] => self.black_kingside_rook_moved = true,
+                    _ => {}
+                }
+            }
+        }
+
         // handle castling rook movement
         if let Some(PieceType::King) = piece.get_type() {
             // detect castling by king moving 2 squares horizontally
@@ -1047,7 +1053,7 @@ impl BoardMap {
         // check for attacking sliding pieces (bishops, rooks, queens) and king
         for (dir_idx, &offset) in DIRECTION_OFFSETS.iter().enumerate() {
             let direction = Direction::from(dir_idx);
-            let is_diagonal = dir_idx % 2 == 1; // diagonal directions are odd indices
+            let is_diagonal = dir_idx >= 4; // diagonal directions are indices 4-7
             let max_distance = self.len_to_edge(square, direction);
 
             for n in 1..=max_distance {
