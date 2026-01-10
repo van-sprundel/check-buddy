@@ -14,6 +14,29 @@ use std::ops::{Deref, DerefMut, Sub};
 const RANKS: [char; 8] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const FILES: [char; 8] = ['1', '2', '3', '4', '5', '6', '7', '8'];
 
+// Lookup tables for converting bit index (0-63) to board coordinates
+const SQUARE_TO_RANK: [usize; 64] = [
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    2, 2, 2, 2, 2, 2, 2, 2,
+    3, 3, 3, 3, 3, 3, 3, 3,
+    4, 4, 4, 4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5, 5, 5,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    7, 7, 7, 7, 7, 7, 7, 7,
+];
+
+const SQUARE_TO_FILE: [usize; 64] = [
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+    0, 1, 2, 3, 4, 5, 6, 7,
+];
+
 #[derive(Clone, Copy)]
 pub struct BoardMap {
     squares: [[Piece; 8]; 8],
@@ -1082,7 +1105,7 @@ impl BoardMap {
             let square_idx = active_bits.trailing_zeros() as usize;
             active_bits ^= 1u64 << square_idx; // Clear the bit
 
-            let from_move = [square_idx / 8, square_idx % 8];
+            let from_move = [SQUARE_TO_RANK[square_idx], SQUARE_TO_FILE[square_idx]];
             let to_moves = self.gen_legal_positions(from_move);
             let moves = to_moves
                 .iter()
@@ -1106,7 +1129,7 @@ impl BoardMap {
             let square_idx = opponent_bits.trailing_zeros() as usize;
             opponent_bits ^= 1u64 << square_idx; // Clear the bit
 
-            let pos = [square_idx / 8, square_idx % 8];
+            let pos = [SQUARE_TO_RANK[square_idx], SQUARE_TO_FILE[square_idx]];
             let positions = self.gen_to_positions(pos);
             opponent_positions.extend(positions);
         }
