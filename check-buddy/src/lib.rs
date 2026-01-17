@@ -10,4 +10,7 @@ pub use moves::*;
 mod game;
 pub use game::*;
 
+mod algorithm;
+pub use algorithm::*;
+
 mod errors;
